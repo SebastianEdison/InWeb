@@ -1,0 +1,12 @@
+# Entorno virtual (no es código, se puede recrear)
+venv/
+
+# Base de datos (datos privados y archivos pesados)
+*.db
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+
+# Reportes de prueba (CSV)
+*.csv
