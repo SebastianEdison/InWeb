@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Producto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>✏️ Editar Producto</h1>
+        
+        <div class="form-card">
+            <form action="/actualizar" method="POST" class="edit-form">
+                <input type="hidden" name="id" value="{{ p['id'] }}">
+
+                <div class="input-group">
+                    <label>Nombre del Producto:</label>
+                    <input type="text" name="nombre" value="{{ p['nombre'] }}" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Precio de Venta ($):</label>
+                    <input type="number" name="precio" value="{{ p['precio_venta'] | int }}" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Costo ($):</label>
+                    <input type="number" name="costo" value="{{ p['costo'] | int }}" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Stock Actual:</label>
+                    <input type="number" name="stock" value="{{ p['stock'] }}" required>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-save">Guardar Cambios</button>
+                    <a href="/" class="btn-clear" style="text-decoration: none; display: inline-block; text-align: center;">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

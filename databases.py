@@ -2,6 +2,7 @@ import sqlite3
 
 def conectar():
     conexion =sqlite3.connect("inventario.db")
+    conexion.row_factory =sqlite3.Row
     #print("Base de datos conectada")
     return conexion
 
@@ -19,7 +20,7 @@ def crear_tablas():
                     nombre TEXT NOT NULL,
                     precio_venta REAL NOT NULL,
                     costo REAL,
-                    stock INTEGER DEFAULT 0,
+                    stock INTEGER DEFAULT 0 CHECK(stock >= 0) ,
                     activo INTEGER DEFAULT 1
                     );
     """)
@@ -82,13 +83,14 @@ def agregar_producto(codigo, nombre, precio, costo, stock):
             
 def obtener_productos(nombre_buscar=None):
     conexion = conectar()
+    conexion.row_factory =sqlite3.Row
     cursor = conexion.cursor()
 
     try:
         if nombre_buscar:
-            #Buscamos por nombre o por codigo de baara con LIKE            
-            sql= "SELECT * FROM productos WHERE (nombre LIKE ? or codigo_barra LIKE ?) AND activo =1"
             param =f"%{nombre_buscar}%"
+            #Buscamos por nombre o por codigo de baara con LIKE            
+            sql= "SELECT * FROM productos WHERE (nombre LIKE ? or codigo_barra LIKE ?) AND activo =1"            
             cursor.execute(sql,(param, param))
         
         else:
@@ -170,61 +172,62 @@ def modificar_stock(producto_id, cantidad_cambio):
     finally:
         if conexion: conexion.close()
 
-def registrar_venta(carrito, metodo_pago= "Efectivo"):
-    """
-    Registra una venta completa:
-    1. Crea el ticket en 'Ventas'.
-    2. Guarda cada producto en 'detalle_venta'.
-    3. Desceunta el stock y registra el movimiento (Kardex).
-    """
-
+def registrar_venta(carrito, metodo_pago="Efectivo"):
     conexion = None
     try:
         conexion = conectar()
         cursor = conexion.cursor()
 
-        # 1. Calcular el total sumando (precio* cantidad) de cada producto en el carrito
+        # 1. VALIDACIÓN: Revisar si hay stock para TODO el carrito antes de empezar
+        for item in carrito:
+            cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (item['id'],))
+            producto = cursor.fetchone()
+            
+            if not producto:
+                return False, f"El producto con ID {item['id']} no existe."
+            
+            # Si lo que quiere vender es mayor a lo que hay, cancelamos
+            if producto['stock'] < item['cantidad']:
+                return False, f"Stock insuficiente para {producto['nombre']}. Solo quedan {producto['stock']}."
+
+        # 2. CALCULAR TOTAL
         total_venta = sum(item['cantidad'] * item['precio'] for item in carrito)
 
-        # 2. Insertar la cabecera de la vena
-        #  Si no envias metodo_pago,aqui se guardara "efectivo"
-        cursor.execute("""
-                       INSERT INTO ventas (total, metodo_pago)
-                       VALUES(?,?)
-                       """, (total_venta, metodo_pago)) 
+        # 3. INSERTAR CABECERA (Ventas)
+        cursor.execute("INSERT INTO ventas (total, metodo_pago) VALUES (?, ?)", 
+                       (total_venta, metodo_pago))
+        venta_id = cursor.lastrowid 
 
-        venta_id = cursor.lastrowid #Este es el numero de boleta generado
-
-        # 3. Procesar cada producto del carrito uno por uno
+        # 4. PROCESAR PRODUCTOS
         for item in carrito:
-            subtotal = item['cantidad']* item['precio']
+            subtotal = item['cantidad'] * item['precio']
 
-            #Guardar el detalle de que se vendio
+            # Detalle de venta
             cursor.execute("""
-                           INSERT INTO detalle_venta (venta_id, producto_id, cantidad, precio_unitario
-                           , subtotal)
-                           VALUES(?,?,?,?,?)
-                           """,(venta_id, item['id'], item['cantidad'], item['precio'], subtotal) )
-            # Descontar el stock en la tabla productos
+                INSERT INTO detalle_venta (venta_id, producto_id, cantidad, precio_unitario, subtotal)
+                VALUES (?, ?, ?, ?, ?)
+            """, (venta_id, item['id'], item['cantidad'], item['precio'], subtotal))
+
+            # DESCUENTO DE STOCK (Aquí es donde se hacía el negativo antes)
             cursor.execute("UPDATE productos SET stock = stock - ? WHERE id = ?",
                            (item['cantidad'], item['id']))
             
-            # Registrar movimientos en el historial (Kardex)
-            cursor.execute ("""
-                            INSERT INTO movimientos_stock(producto_id, tipo, cantidad)
-                            VALUES (?, 'VENTA',?)
-                            """, (item['id'], item['cantidad']))
-        
-        # 4. Confirmar toda la operacion
+            # Registro en Kardex (Movimientos)
+            cursor.execute("""
+                INSERT INTO movimientos_stock (producto_id, tipo, cantidad)
+                VALUES (?, 'VENTA', ?)
+            """, (item['id'], item['cantidad']))
+
+        # 5. COMMIT FINAL (Solo se guarda si nada falló arriba)
         conexion.commit()
-        print(f"venta #{venta_id} registrada con exito (${total_venta}) pago: {metodo_pago}")
+        print(f"✅ Venta #{venta_id} registrada con éxito (${total_venta})")
         return True, venta_id
-    
-    except sqlite3.Error as e:
+
+    except Exception as e:
         if conexion:
-            conexion.rollback() # Si algo falla ej, se apaga el pc deshace todo
-            print(f"Error al registrar la venta{e}")
-            return False, str(e)
+            conexion.rollback() # Si hay error de sistema, deshace todo
+        print(f"❌ Error al registrar la venta: {e}")
+        return False, str(e)
         
     finally: 
         if conexion:
@@ -266,26 +269,39 @@ def probar_sistema():
 
     print("\n --- PRUEBAS FINALIZADAS ---")
 
-def conectar():
-    conexion = sqlite3.connect("inventario.db")
-    # Esta línea es MAGIA: permite acceder a los datos por nombre de columna
-    conexion.row_factory = sqlite3.Row 
-    return conexion
+def actualizar_producto(id_p, nombre, precio, costo, stock):
+    conexion = conectar()
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("""
+            UPDATE productos 
+            SET nombre = ?, precio_venta = ?, costo = ?, stock = ?
+            WHERE id = ?
+        """, (nombre, precio, costo, stock, id_p))
+        conexion.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"Error al actualizar: {e}")
+        return False
+    finally:
+        conexion.close()
 
 
-        
+# Formato: (codigo, nombre, precio_venta, costo_compra, stock)
+agregar_producto('1123458', 'Super 8', 400, 270, 3)        
 #-----------------------------------------------------------------
 # Simulamos que escaneamos dos productos
-mi_carrito = [
-    {'id': 1, 'cantidad': 2, 'precio': 1500}, # 2 Leches
-    {'id': 2, 'cantidad': 1, 'precio': 2200}  # 1 Pan
-]
+#mi_carrito = [
+#    {'id': 1, 'cantidad': 2, 'precio': 1200}, # 2 Leches
+    #{'id': 2, 'cantidad': 1, 'precio': 2200}  # 1 Pan
+#]
 
 # Probar venta en Efectivo (por defecto)
-registrar_venta(mi_carrito)
+#registrar_venta(mi_carrito)
 
 # Probar venta con Tarjeta
-registrar_venta(mi_carrito, "Tarjeta")
+#registrar_venta(mi_carrito, "Tarjeta")
 
 # Probar venta con Billetera Digital (Mercado Pago)
-registrar_venta(mi_carrito, "Billetera Digital")
+#registrar_venta(mi_carrito, "Billetera Digital")
+

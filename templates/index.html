@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 Gestión de Inventario</h1>
+
+    <section class="search-section">
+        <form action="/" method="GET" class="search-form">
+            <input type="text" name="busqueda" placeholder="Escanear o buscar producto..." 
+                value="{{ busqueda }}" autofocus>
+            
+            <button type="submit" class="btn-search">🔍 Buscar</button>
+
+            <a href="/?bajo_stock=1" class="btn-alert">
+                ⚠️ Stock Bajo ({{ alertas }})
+            </a>
+
+            {% if busqueda or filtrado_bajo %}
+                <a href="/" class="btn-ver-todo">📋 Mostrar todo</a>
+            {% endif %}
+        </form>
+    </section>
+    <ul class="responsive-table">
+        <li class="table-header">
+            <div class="col col-1">Código</div>
+            <div class="col col-2">Nombre Producto</div>
+            <div class="col col-3">Precio</div>
+            <div class="col col-4">Stock</div>
+            <div class="col col-5">Editar</div>
+        </li>
+        
+        {% for p in lista %}
+        <li class="table-row">
+            <div class="col col-1" data-label="Código">{{ p['codigo_barra'] }}</div>
+            <div class="col col-2" data-label="Nombre">{{ p['nombre'] }}</div>
+            <div class="col col-3" data-label="Precio">${{ p['precio_venta'] | int }}</div>
+            <div class="col col-4 {{ 'stock-bajo' if p['stock'] <= 3 else '' }}" data-label="Stock">
+                {{ p['stock'] }}
+            </div>
+            <div class="col col-5" data-label="Acciones">
+            <a href="/editar/{{ p['id'] }}" class="btn-mini btn-editar" placeholder ="Editar">✏️</a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="form-card">
+        <h3>➕ Añadir Producto Nuevo</h3>
+        <form action="/agregar" method="POST" class="add-form">
+            <input type="text" name="codigo" placeholder="Código" required>
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="number" name="precio" placeholder="Precio" required>
+            <input type="number" name="costo" placeholder="Costo" required>
+            <input type="number" name="stock" placeholder="Stock" required>
+            <button type="submit" class="btn-save">Guardar Producto</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

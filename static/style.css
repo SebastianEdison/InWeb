@@ -1,0 +1,210 @@
+/*Index.html*/
+body {
+  font-family: 'lato', sans-serif;
+  background-color: #f4f7f6;
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+h1, h3 {
+  text-align: center;
+  color: #2c3e50;
+}
+
+/* BUSCADOR */
+.search-section {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.search-form input {
+  padding: 10px;
+  width: 300px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.btn-search {
+  padding: 10px 20px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+/* TABLA */
+.responsive-table li {
+  border-radius: 3px;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.table-header {
+  background-color: #95a5a6;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: white;
+  font-weight: bold;
+}
+
+.table-row {
+  background-color: #ffffff;
+  box-shadow: 0px 0px 9px 0px rgba(0,0,0,0.1);
+}
+/*boton de editar*/
+.btn-editar { 
+    background: #34495e; 
+    color: white; 
+    text-decoration: none; 
+    padding: 5px 10px; 
+    display: inline-block; 
+}
+/* COLUMNAS (Ajuste de anchos) */
+.col-1 { flex-basis: 15%; }
+.col-2 { flex-basis: 35%; }
+.col-3 { flex-basis: 15%; }
+.col-4 { flex-basis: 10%; text-align: center;}
+.col-5 { flex-basis: 20%; text-align: right; }
+
+/* ALERTAS DE STOCK */
+.stock-bajo {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* BOTONES MINI */
+.btn-mini {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #2ecc71;
+  color: white;
+  margin-left: 5px;
+}
+
+.btn-vender { background: #f1c40f; color: #333; }
+
+/* FORMULARIO AGREGAR */
+.form-card {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 15px rgba(0,0,0,0.05);
+  margin-top: 40px;
+}
+
+.add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.add-form input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.btn-save {
+  background: #2c3e50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+/* Botón Naranja de Alerta */
+.btn-alert {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #e67e22; /* Color Naranja */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-left: 10px;
+    transition: background 0.3s;
+    border: none;
+}
+
+.btn-alert:hover {
+    background-color: #d35400;
+}
+
+/* Botón Verde de Mostrar Todo */
+.btn-ver-todo {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #2ecc71;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-left: 10px;
+    margin-top: 7px;
+    font-weight: bold;
+}
+
+.btn-ver-todo:hover {
+    background-color: #27ae60;
+}
+
+/* Animación opcional para que el botón de alerta llame la atención */
+.btn-alert {
+    animation: pulse-warn 2s infinite;
+}
+
+@keyframes pulse-warn {
+    0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+}
+/*Editar.html*/
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.input-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.input-group input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
