@@ -724,7 +724,7 @@ h1, h3 {
 }
 
 /* --- BOTÓN CANCELAR VENTA (Original, pero con efecto rojo en hover) --- */
-.btn-vaciar-carrito {
+.btn-cancelar-discreto {
     width: 100%; /* ¡Mantiene el ancho completo original! */
     background: none;
     border: 1px solid #cbd5e1; /* Borde sutil gris */
@@ -742,7 +742,7 @@ h1, h3 {
 }
 
 /* EFECTO ROJO AL PASAR EL MOUSE (Hover) */
-.btn-vaciar-carrito:hover {
+.btn-cancelar-discreto:hover {
     background-color: #fee2e2; /* Fondo rojo pálido sutil */
     color: #ef4444; /* Texto rojo brillante */
     border-color: #fecaca; /* Borde rojo pálido */
@@ -923,4 +923,46 @@ h1, h3 {
 .main-content {
     margin-top: 0; /* Asegura que el contenido pegue con la barra superior */
     padding-top: 20px;
+}
+.btn-eliminar-item {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.btn-eliminar-item:hover {
+    color: #b91c1c;
+}
+/*BUSQUEDA DE VENTAS */
+/* Contenedor del buscador para que la lista no se mueva */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+}
+
+/* Estilo de la lista de sugerencias */
+/* --- CONTENEDOR DEL BUSCADOR --- */
+/* --- BUSCADOR Y LUPA --- */
+/* Asegura que el buscador sea el "ancla" de la lista */
+.input-with-icon {
+    position: relative; /* VITAL para que la lista no flote en cualquier lado */
+    width: 100%;
+}
+
+.sugerencias-busqueda {
+    display: none; /* Se activa desde el JS */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white !important;
+    border: 1px solid #ddd;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 9999 !important; /* Para que pase por encima de la tabla */
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }

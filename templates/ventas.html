@@ -16,6 +16,13 @@
 
         <div class="top-bar-right">
             <div class="caja-diaria-group">
+                <div class="indicator-card total-dia">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="info">
+                        <span>Venta Total</span>
+                        <strong id="total-dia-acumulado">$0</strong>
+                    </div>
+                </div>
                 <div class="indicator-card efectivo">
                     <i class="fas fa-money-bill-wave"></i>
                     <div class="info">
@@ -36,10 +43,6 @@
                         <span>Otros</span>
                         <strong id="total-otros">$0</strong>
                     </div>
-                </div>
-                <div class="info">
-                    <span>Venta Total</span>
-                    <strong id="total-dia-acumulado">$0</strong>
                 </div>
             </div>
         </div>
@@ -62,11 +65,10 @@
             <div class="container">
                 <header class="main-header">
                     <h1>🛒 Módulo de Ventas</h1>
-                    <p>Escanee productos o use el buscador manual</p>
+                    <p>Escanee productos o use el buscador manual para predicciones</p>
                 </header>
 
                 <div class="ventas-layout">
-                    
                     <div class="ventas-main">
                         <section class="search-box-container">
                             <div class="input-with-icon">
@@ -74,9 +76,7 @@
                                 <input type="text" id="buscador-ventas" 
                                        placeholder="Escriba nombre del producto o escanee código..." 
                                        autocomplete="off" autofocus>
-                                
-                                <ul id="lista-sugerencias" class="sugerencias-busqueda">
-                                    </ul>
+                                <ul id="lista-sugerencias" class="sugerencias-busqueda"></ul>
                             </div>
                         </section>
 
@@ -86,9 +86,10 @@
                                     <tr>
                                         <th>Producto</th>
                                         <th>Cant.</th>
-                                        <th>Precio unitario</th>
+                                        <th>Precio Unitario (Total)</th>
+                                        <th>Precio Neto</th>
                                         <th>IVA (19%)</th>
-                                        <th>Total</th>
+                                        <th>Total Fila</th>
                                         <th>Acción</th>
                                     </tr>
                                 </thead>
@@ -131,8 +132,9 @@
                             </div>
                         </div>
                     </div>
-
                 </div> </div> </main>
-    </div> <script src="{{ url_for('static', filename='ventas.js') }}"></script>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
 </body>
 </html>
