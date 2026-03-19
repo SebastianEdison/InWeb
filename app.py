@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify,url_for, flash
 #Importamos funciones de bbdd
-from databases import obtener_productos
+from databases import obtener_productos,eliminar_producto,actualizar_producto, agregar_producto,buscar_producto_por_codigo
+import sqlite3
 
 app = Flask(__name__)
-
+app.secret_key = 'clave_secreta' # Pon cualquier frase aquí
 # Definimos la ruta principal (pagina de inicio)
 
 @app.route('/')
@@ -34,21 +35,6 @@ def index():
                            busqueda=busqueda, 
                            alertas=alertas_count,
                            filtrado_bajo=solo_bajo_stock)
-
-@app.route('/agregar' , methods = ['POST'])
-def agregar():
-    nombre = request.form['nombre']
-    precio_venta =request.form['precio']#Lo que va a pagar el cliente
-    precio_compra = request.form ['costo']# A lo que se compra el producto
-    stock_inicial = request.form['stock']
-    codigo = request.form ['codigo']
-
-    # Se guarda en la bbdd
-    from databases import agregar_productos
-    agregar_productos(codigo, nombre, precio_venta, precio_compra, stock_inicial)
-
-    return redirect('/')
-
 
 @app.route('/actualizar', methods=['POST'])
 def actualizar():
@@ -83,8 +69,53 @@ def editar_vista(id_p):
     else:
         return "Producto no encontrado", 404
     
+@app.route('/agregar', methods=['GET', 'POST'])
+def agregar():
+    if request.method == 'POST':
+        try:
+            codigo = request.form.get('codigo')
+            nombre = request.form.get('nombre')
+            p_venta = request.form.get('precio_venta')
+            p_compra = request.form.get('precio_compra')
+            cantidad = int(request.form.get('stock'))
 
+            # Usamos tu lógica de databases.py
+            # Esta función ya maneja si suma o crea nuevo
+            agregar_producto(codigo, nombre, p_venta, p_compra, cantidad)
+            
+            return jsonify({"status": "success", "message": f"Producto '{nombre}' procesado correctamente."})
+        
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+    
+    return render_template('agregar.html')
 
+# RUTA 1: La API que consulta el JS mientras escaneas
+@app.route('/api/buscar_producto/<codigo>')
+def api_buscar_producto(codigo):
+    producto = buscar_producto_por_codigo(codigo)
+    if producto:
+        return jsonify({
+            "existe": True,
+            "nombre": producto['nombre'],
+            "costo": producto['costo'],
+            "precio_venta": producto['precio_venta'],
+            "stock": producto['stock']
+        })
+    return jsonify({"existe": False})
+
+@app.route('/eliminar/<int:id>', methods=['POST'])
+def eliminar(id):
+    eliminar_producto(id) # Nombre de tu función en databases.py
+    # El primer texto es el mensaje, el segundo es la categoría para el CSS
+    flash('✅ Producto eliminado con éxito', 'success') 
+    return redirect('/')
+
+@app.route('/ventas')
+def ventas():
+    # Por ahora solo mostramos la página vacía para ver el diseño
+    # Pasamos una lista vacía para que no de error el 'for' si lo tuvieras
+    return render_template('ventas.html')
 
 
 if __name__ == '__main__':

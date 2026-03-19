@@ -62,24 +62,43 @@ def crear_tablas():
     conexion.close()
 
 def agregar_producto(codigo, nombre, precio, costo, stock):
-
     conexion = conectar()
-    print("Base de datos conectada")
     cursor = conexion.cursor()
-    sql =("""
-    INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock)
-    VALUES (?, ?, ?, ?, ?)
-    """)
+    
     try:
-        cursor.execute(sql,(codigo,nombre,precio,costo,stock))
+        # 1. Primero verificamos si el producto ya existe por su código de barras
+        cursor.execute("SELECT id, stock FROM productos WHERE codigo_barra = ?", (codigo,))
+        existente = cursor.fetchone()
+
+        if existente:
+            # 2. SI EXISTE: Calculamos el nuevo stock sumando el actual + el nuevo
+            id_producto = existente['id']
+            stock_actual = existente['stock']
+            nuevo_total = stock_actual + int(stock)
+            
+            # Actualizamos los datos y sumamos el stock
+            cursor.execute("""
+                UPDATE productos 
+                SET nombre = ?, precio_venta = ?, costo = ?, stock = ?
+                WHERE id = ?
+            """, (nombre, precio, costo, nuevo_total, id_producto))
+            print(f"✅ Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
+            
+        else:
+            # 3. SI NO EXISTE: Insertamos el registro nuevo normalmente
+            cursor.execute("""
+                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock)
+                VALUES (?, ?, ?, ?, ?)
+            """, (codigo, nombre, precio, costo, stock))
+            print(f"✨ Nuevo producto '{nombre}' registrado con éxito")
+
         conexion.commit()
-        print("producto agregado correctamente")
+
     except sqlite3.Error as e:
         conexion.rollback()
-        print(f"Error al insertar: {e}")
-
+        print(f"❌ Error al procesar producto: {e}")
     finally:
-        conexion.close()    
+        conexion.close()  
             
 def obtener_productos(nombre_buscar=None):
     conexion = conectar()
@@ -286,9 +305,25 @@ def actualizar_producto(id_p, nombre, precio, costo, stock):
     finally:
         conexion.close()
 
-
+def eliminar_producto(id_recibido):
+    # Usa TU función de conexión (ejemplo: conectar_db o get_db)
+    conexion = conectar() 
+    cursor = conexion.cursor()
+    
+    # IMPORTANTE: Usa el nombre de tu tabla y de tu columna ID
+    # Si tu tabla se llama 'mercaderia', cámbialo aquí
+    cursor.execute("DELETE FROM productos WHERE id = ?", (id_recibido,))
+    
+    conexion.commit()
+    conexion.close()
 # Formato: (codigo, nombre, precio_venta, costo_compra, stock)
-agregar_producto('1123458', 'Super 8', 400, 270, 3)        
+#agregar_producto('1123459', 'helado', 250, 85, 30)    
+#agregar_producto('1123460', 'Cafe', 4500,3800, 24) 
+#agregar_producto('1123461', 'mantequilla', 2250, 1800, 20) 
+#agregar_producto('1123462', 'yogurt', 400, 270, 12) 
+#agregar_producto('1123463', 'Pilas AAA', 800, 650, 12) 
+#agregar_producto('1123464', 'Bebida', 1850, 1700, 40) 
+#agregar_producto('1123465', 'galletas', 1400, 1100, 2)     
 #-----------------------------------------------------------------
 # Simulamos que escaneamos dos productos
 #mi_carrito = [

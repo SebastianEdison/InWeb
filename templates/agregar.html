@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso de Mercadería - Mi Negocio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>🏪 MI NEGOCIO</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/"><i class="fas fa-boxes"></i> Inventario</a></li>
+                <li class="active"><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar/Buscar</a></li>
+                <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                <li><a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>v1.2 - 2026</p>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="container-form-central">
+                
+                <header class="main-header">
+                    <h1>✨ Ingreso de Mercadería</h1>
+                    <p>Usa el escáner para registrar productos o actualizar el stock</p>
+                </header>
+
+                <div class="card-form-compact">
+                    
+                    <div class="search-container">
+                        <div class="search-label">
+                            <i class="fas fa-barcode"></i>
+                            <span>LECTOR DE CÓDIGO ACTIVO</span>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="codigo_search" placeholder="Escanea el código de barras..." autofocus autocomplete="off">
+                            <button type="button" onclick="verificarProducto()" class="btn-search-icon">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <p class="search-helper">El cursor se posiciona aquí solo</p>
+                    </div>
+
+                    <form id="form-ingreso-producto" onsubmit="procesarIngreso(event)" style="display: none;">
+                        
+                        <div id="status-badge"></div>
+                        
+                        <input type="hidden" name="codigo" id="final_codigo">
+
+                        <div class="form-group">
+                            <label style="color: #3b82f6;"><i class="fas fa-tag"></i> Nombre del Producto</label>
+                            <input type="text" name="nombre" id="form_nombre" required placeholder="Nombre descriptivo">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="color: #10b981;"><i class="fas fa-file-invoice-dollar"></i> P. Compra (Costo)</label>
+                                <input type="number" name="precio_compra" id="form_pcompra" step="any" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label style="color: #f59e0b;"><i class="fas fa-hand-holding-usd"></i> P. Venta</label>
+                                <input type="number" name="precio_venta" id="form_pventa" step="any" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label id="label-stock" style="color: #8b5cf6;"><i class="fas fa-layer-group"></i> Cantidad:</label>
+                            <input type="number" name="stock" id="form_stock" required placeholder="0">
+                            <p id="current-stock-info" class="helper-text" style="margin-top: 5px; color: #64748b; font-size: 0.9rem;"></p>
+                        </div>
+
+                        <div class="form-actions-vertical" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn-save" style="background: #10b981; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                                💾 GUARDAR E INGRESAR
+                            </button>
+                            <button type="button" onclick="resetearBuscador()" class="btn-cancel" style="background: #f1f5f9; color: #475569; border: none; padding: 10px; border-radius: 8px; cursor: pointer;">
+                                Limpiar y Escanear otro
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+
+</body>
+</html>
