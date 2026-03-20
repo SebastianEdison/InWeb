@@ -1,98 +1,146 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ingreso de Mercadería - Mi Negocio</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="wrapper">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h3>🏪 MI NEGOCIO</h3>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="/"><i class="fas fa-boxes"></i> Inventario</a></li>
-                <li class="active"><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar/Buscar</a></li>
-                <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
-                <li><a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
-            </ul>
-            <div class="sidebar-footer">
-                <p>v1.2 - 2026</p>
-            </div>
-        </nav>
+{% block title %}Ingreso de Mercadería - Mi Negocio{% endblock %}
 
-        <main class="main-content">
-            <div class="container-form-central">
-                
-                <header class="main-header">
-                    <h1>✨ Ingreso de Mercadería</h1>
-                    <p>Usa el escáner para registrar productos o actualizar el stock</p>
-                </header>
+{% block topbar_stats %}
 
-                <div class="card-form-compact">
-                    
-                    <div class="search-container">
-                        <div class="search-label">
-                            <i class="fas fa-barcode"></i>
-                            <span>LECTOR DE CÓDIGO ACTIVO</span>
-                        </div>
-                        <div class="search-box">
-                            <input type="text" id="codigo_search" placeholder="Escanea el código de barras..." autofocus autocomplete="off">
-                            <button type="button" onclick="verificarProducto()" class="btn-search-icon">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                        <p class="search-helper">El cursor se posiciona aquí solo</p>
-                    </div>
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
+{% endblock %}
+{% block content %}
+<div class="header-seccion-central">
+    <h1><i class="fas fa-boxes"></i> Ingreso de Mercadería</h1>
+    <p>Escanee productos para registrar o actualizar stock en el inventario</p>
+</div>
+<div class="registro-wrapper">
+    <div class="panel-configuracion">
+        <div class="seccion-header">
+            <span class="paso-numero">1</span>
+            <h3>Tipo de Ingreso</h3>
+        </div>
 
-                    <form id="form-ingreso-producto" onsubmit="procesarIngreso(event)" style="display: none;">
-                        
-                        <div id="status-badge"></div>
-                        
-                        <input type="hidden" name="codigo" id="final_codigo">
-
-                        <div class="form-group">
-                            <label style="color: #3b82f6;"><i class="fas fa-tag"></i> Nombre del Producto</label>
-                            <input type="text" name="nombre" id="form_nombre" required placeholder="Nombre descriptivo">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label style="color: #10b981;"><i class="fas fa-file-invoice-dollar"></i> P. Compra (Costo)</label>
-                                <input type="number" name="precio_compra" id="form_pcompra" step="any" placeholder="0.00">
-                            </div>
-                            <div class="form-group">
-                                <label style="color: #f59e0b;"><i class="fas fa-hand-holding-usd"></i> P. Venta</label>
-                                <input type="number" name="precio_venta" id="form_pventa" step="any" placeholder="0.00" required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label id="label-stock" style="color: #8b5cf6;"><i class="fas fa-layer-group"></i> Cantidad:</label>
-                            <input type="number" name="stock" id="form_stock" required placeholder="0">
-                            <p id="current-stock-info" class="helper-text" style="margin-top: 5px; color: #64748b; font-size: 0.9rem;"></p>
-                        </div>
-
-                        <div class="form-actions-vertical" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                            <button type="submit" class="btn-save" style="background: #10b981; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                                💾 GUARDAR E INGRESAR
-                            </button>
-                            <button type="button" onclick="resetearBuscador()" class="btn-cancel" style="background: #f1f5f9; color: #475569; border: none; padding: 10px; border-radius: 8px; cursor: pointer;">
-                                Limpiar y Escanear otro
-                            </button>
-                        </div>
-                    </form>
-
+        <div class="tipo-selector-vertical">
+            <div class="metodo-item active" id="btn-con-codigo" onclick="seleccionarTipo('codigo')">
+                <i class="fas fa-barcode"></i>
+                <div class="metodo-texto">
+                    <strong>Con Código</strong>
+                    <p>Productos con etiqueta</p>
                 </div>
             </div>
-        </main>
+
+            <div class="metodo-item" id="btn-por-peso" onclick="seleccionarTipo('peso')">
+                <i class="fas fa-balance-scale"></i>
+                <div class="metodo-texto">
+                    <strong>Peso / Granel</strong>
+                    <p>Kuchen, pan, frutas, etc.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="identificador-area">
+            <label class="lbl-generico">Identificación del Producto</label>
+            <div class="search-box-modern">
+                <input type="text" id="codigo_search" placeholder="Escanea el código..." autofocus autocomplete="off">
+                <i class="fas fa-search icon-search-inside"></i>
+            </div>
+            <small id="helper-identificador">El lector está listo para escanear</small>
+        </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+    <div class="panel-formulario">
+        <div class="seccion-header">
+            <span class="paso-numero">2</span>
+            <h3>Información Detallada</h3>
+        </div>
 
-</body>
-</html>
+        <form id="form-ingreso-completo" onsubmit="procesarIngreso(event)">
+            <div class="form-group-full">
+                <label class="lbl-blue"><i class="fas fa-tag"></i> Nombre del Producto</label>
+                <input type="text" id="form_nombre" required placeholder="Ej: Kuchen de Manzana">
+            </div>
+
+            <div class="form-grid-precios">
+                <div class="form-group">
+                    <label class="lbl-green"><i class="fas fa-arrow-down"></i> P. Compra</label>
+                    <input type="number" id="form_pcompra" step="any" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-orange"><i class="fas fa-arrow-up"></i> P. Venta</label>
+                    <input type="number" id="form_pventa" step="any" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <div class="stock-container-modern">
+                <div class="form-group">
+                    <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
+                    <input type="number" id="form_stock" placeholder="0">
+                </div>
+                
+                <div class="opcion-sin-stock">
+                    <label class="switch-container">
+                        <input type="checkbox" id="chk_venta_libre">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="switch-texto">
+                        <strong>Venta Libre / Sin Stock</strong>
+                        <p>Para productos que no requieren inventario</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-acciones">
+                <button type="submit" class="btn-guardar-pro">
+                    <i class="fas fa-check-circle"></i> REGISTRAR PRODUCTO EN SISTEMA
+                </button>
+                <button type="button" class="btn-limpiar-pro" onclick="resetTodo()">
+                    <i class="fas fa-undo"></i> Limpiar Todo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+    <script>
+        // Función para cambiar entre 'Código' y 'Peso' visualmente
+        function seleccionarTipoRegistro(tipo) {
+            // Guardar el tipo actual
+            document.getElementById('tipo_registro_actual').value = tipo;
+            
+            // Cambiar clases activas en los botones (como en el modal de ventas)
+            document.getElementById('btn-con-codigo').classList.remove('active');
+            document.getElementById('btn-por-peso').classList.remove('active');
+            
+            const searchInput = document.getElementById('codigo_search');
+            const labelLector = document.getElementById('texto-estado-lector');
+            
+            if (tipo === 'codigo') {
+                document.getElementById('btn-con-codigo').classList.add('active');
+                labelLector.textContent = "LECTOR DE CÓDIGO ACTIVO";
+                searchInput.placeholder = "Escanea el código de barras...";
+                document.getElementById('btn-nuevo-peso').style.display = 'none';
+            } else {
+                document.getElementById('btn-por-peso').classList.add('active');
+                labelLector.textContent = "MODO PRODUCTO POR PESO";
+                searchInput.placeholder = "Busca por nombre o ID interno...";
+                // Aquí podrías mostrar un botón de "Nuevo Producto a Granel" si no existe
+            }
+            
+            resetearBuscador();
+            searchInput.focus();
+        }
+
+        // Mantener el foco en el buscador siempre
+        document.addEventListener('click', (e) => {
+            const search = document.getElementById('codigo_search');
+            const form = document.getElementById('form-ingreso-producto');
+            // Solo reenfocar si el formulario está oculto
+            if (search && form.style.display === 'none') {
+                search.focus();
+            }
+        });
+    </script>
+{% endblock %}

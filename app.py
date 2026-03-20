@@ -54,21 +54,33 @@ def editar_vista(id_p):
     return "Producto no encontrado", 404
 
 # --- AGREGAR ---
-@app.route('/agregar', methods=['GET', 'POST'])
+@app.route('/agregar', methods=['GET', 'POST']) # <--- Verifica que estén AMBOS aquí
 def agregar():
     if request.method == 'POST':
         try:
-            codigo = request.form.get('codigo')
-            nombre = request.form.get('nombre')
-            p_venta = request.form.get('precio_venta')
-            p_compra = request.form.get('precio_compra')
-            cantidad = int(request.form.get('stock'))
+            data = request.get_json()
+            
+            # Extraemos con .get() para evitar errores si falta un campo
+            codigo = data.get('codigo')
+            nombre = data.get('nombre')
+            p_compra = data.get('precio_compra') or 0
+            p_venta = data.get('precio_venta')
+            stock = data.get('stock') or 0
 
-            agregar_producto(codigo, nombre, p_venta, p_compra, cantidad)
-            return jsonify({"status": "success", "message": f"Producto '{nombre}' procesado."})
+            # Si no hay precio de venta, lanzamos error antes de la base de datos
+            if not p_venta:
+                return jsonify({"status": "error", "message": "Falta el precio de venta"}), 400
+
+            # Tu función que guarda en la DB
+            agregar_producto(codigo, nombre, p_venta, p_compra, stock)
+            
+            return jsonify({"status": "success", "message": "Producto guardado con éxito"})
+        
         except Exception as e:
+            print(f"Error en POST /agregar: {e}")
             return jsonify({"status": "error", "message": str(e)}), 500
-    
+
+    # Si el método es GET, simplemente mostramos la página
     return render_template('agregar.html')
 
 # --- API BUSQUEDA (LA QUE USA EL JS) ---
@@ -101,6 +113,12 @@ def eliminar(id):
 @app.route('/ventas')
 def ventas():
     return render_template('ventas.html')
+
+@app.route('/reportes')
+def reportes():
+    # Por ahora solo devolvemos el template. 
+    # Más adelante aquí calcularemos los datos de "Productos Muertos" y "A Vencer".
+    return render_template('reportes.html')
 
 if __name__ == '__main__':
     crear_tablas()

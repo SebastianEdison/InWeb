@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reportes.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reportes-wrapper">
+    
+    <div class="reportes-header">
+        <div class="header-text">
+            <h1>Panel de Control</h1>
+            <p>Estado general del negocio y alertas</p>
+        </div>
+    </div>
+
+    <div class="reportes-grid">
+        <div class="card-metrica card-ingresos">
+            <div class="card-icon"><i class="fas fa-vault"></i></div>
+            <div class="card-content">
+                <span class="label">Ingresos Reales</span>
+                <h2 id="rep-ingresos">$0</h2>
+                <span class="trend">Efectivo + Tarjeta</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-fiados">
+            <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+            <div class="card-content">
+                <span class="label">Fiados por Cobrar</span>
+                <h2 id="rep-fiados">$0</h2>
+                <span class="trend">Total acumulado</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-muertos">
+            <div class="card-icon"><i class="fas fa-ghost"></i></div>
+            <div class="card-content">
+                <span class="label">Productos Muertos</span>
+                <h2 id="rep-muertos">0</h2>
+                <span class="trend">Sin venta > 30 días</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-vencer">
+            <div class="card-icon"><i class="fas fa-calendar-times"></i></div>
+            <div class="card-content">
+                <span class="label">Próximos a Vencer</span>
+                <h2 id="rep-vencer">0</h2>
+                <span class="trend">Revisar caducidad</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-config" onclick="location.href='/configuracion'">
+            <div class="card-icon"><i class="fas fa-cog"></i></div>
+            <div class="card-content">
+                <span class="label">Configuración</span>
+                <h2>Ajustes</h2>
+                <span class="trend">Sistema</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="reportes-detalle">
+        <div class="detalle-tabs">
+            <button class="tab-link active" onclick="verDetalle('muertos', this)">
+                <i class="fas fa-ghost"></i> Ver Productos Muertos
+            </button>
+            <button class="tab-link" onclick="verDetalle('vencer', this)">
+                <i class="fas fa-calendar-times"></i> Ver Por Vencer
+            </button>
+        </div>
+        
+        <div class="tabla-container">
+            <h3 id="titulo-detalle">Lista de Productos Muertos</h3>
+            <table class="tabla-reporte">
+                <thead>
+                    <tr id="tabla-header">
+                        </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

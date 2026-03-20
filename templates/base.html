@@ -3,32 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Inventario</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>{% block title %}Mi Negocio{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='registos_producto.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    
+    {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
 </head>
 <body>
 
-    <div class="wrapper">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h2>🏪 Mi Negocio</h2>
+    <header class="top-bar">
+        <div class="top-bar-container">
+            
+            <div class="top-section left">
+                <h2 class="app-logo">🏪 MI NEGOCIO</h2>
             </div>
-            <ul class="sidebar-menu">
-                <li><a href="/"><i class="fas fa-box"></i> Inventario</a></li>
-                <li><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar Producto</a></li>
-                <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
-                <li><a href="/reportes"><i class="fas fa-chart-line"></i> Reportes</a></li>
-            </ul>
-            <div class="sidebar-footer">
-                <p>Sesión: Administrador</p>
-            </div>
-        </nav>
 
-        <main class="main-content">
+            <div class="top-section center">
+                <nav class="top-nav">
+                    <ul class="nav-menu">
+                        <li class="{{ 'active' if request.path == '/' }}"><a href="/"><i class="fas fa-boxes"></i> Inventario</a></li>
+                        <li class="{{ 'active' if request.path == '/agregar' }}"><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar</a></li>
+                        <li class="{{ 'active' if request.path == '/ventas' }}"><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                        <li class="{{ 'active' if request.path == '/reportes' }}"><a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="top-section right">
+                {% block topbar_stats %}{% endblock %}
+            </div>
+
+        </div>
+    </header>
+
+    <main class="main-content-master">
+        <div class="container-fluid-custom">
             {% block content %}{% endblock %}
-        </main>
-    </div>
+        </div>
+    </main>
 
+    {% block scripts %}{% endblock %}
 </body>
 </html>

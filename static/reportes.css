@@ -1,0 +1,167 @@
+/* --- CONTENEDOR PRINCIPAL --- */
+.reportes-wrapper {
+    padding: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+/* --- HEADER Y FILTROS --- */
+.reportes-header {
+    display: flex;
+    flex-direction: column; /* Alinea el h1 y el p uno debajo del otro */
+    justify-content: center; /* Centra verticalmente si hay espacio */
+    align-items: center;    /* Centra horizontalmente todo el bloque */
+    text-align: center;     /* Asegura que el texto dentro de h1 y p se centre */
+    margin-bottom: 30px;    /* Espacio con las tarjetas */
+    width: 100%;             /* Ocupa todo el ancho */
+}
+
+.header-text h1 {
+    font-size: 1.8rem;
+    color: #1e293b;
+    margin-bottom: 5px; /* Espacio con la descripción */
+}
+
+.header-text p {
+    color: #64748b;
+    margin: 0; /* Elimina márgenes extra para centrar bien */
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.selector-periodo {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selector-periodo select {
+    border: none;
+    outline: none;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* --- GRID DE TARJETAS (INDICADORES) --- */
+.reportes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.card-metrica {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-metrica:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo de los Iconos (Círculos de color) */
+.card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.card-content .label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.card-content h2 {
+    font-size: 1.5rem;
+    margin: 5px 0;
+    color: #0f172a;
+}
+
+.card-content .trend {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* --- COLORES PERSONALIZADOS (Basados en tu imagen de referencia) --- */
+
+/* Ingresos (Verde/Azul) */
+.card-ingresos .card-icon { background: #10b981; }
+.card-ingresos .trend { color: #059669; }
+
+/* Fiados (Naranja/Ámbar) */
+.card-fiados .card-icon { background: #f59e0b; }
+.card-fiados .trend { color: #d97706; }
+
+/* Productos Muertos (Gris/Azul Oscuro) */
+.card-muertos .card-icon { background: #6366f1; }
+.card-muertos .trend { color: #4f46e5; }
+
+/* A Vencer (Rojo) */
+.card-vencer .card-icon { background: #ef4444; }
+.card-vencer .trend { color: #dc2626; }
+
+/* Configuración (Gris Elegante) */
+.card-config .card-icon { background: #94a3b8; }
+.card-config .trend { color: #64748b; }
+
+/* --- TABLA DE DETALLES --- */
+.reportes-detalle {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.detalle-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.tab-link {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.tab-link.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+/* --- ANIMACIÓN --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+#titulo-detalle {
+    margin: 20px 0;
+    color: #1e293b;
+    font-size: 1.2rem;
+}

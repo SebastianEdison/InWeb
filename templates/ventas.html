@@ -1,140 +1,170 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ventas - Mi Negocio</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <header class="top-bar">
-        <div class="top-bar-left">
-            <h2 class="app-logo">Sistema de Ventas</h2>
+{% block title %}Ventas - Mi Negocio{% endblock %}
+
+{% block topbar_stats %}
+    <div class="caja-diaria-group">
+        <div class="indicator-card total-dia">
+            <i class="fas fa-chart-line"></i>
+            <div class="info">
+                <span>Venta Total</span>
+                <strong id="total-dia-acumulado">$0</strong>
+            </div>
+        </div>
+        <div class="indicator-card efectivo">
+            <i class="fas fa-money-bill-wave"></i>
+            <div class="info">
+                <span>Efectivo</span>
+                <strong id="total-efectivo">$0</strong>
+            </div>
+        </div>
+        <div class="indicator-card tarjeta">
+            <i class="fas fa-credit-card"></i>
+            <div class="info">
+                <span>Tarjeta</span>
+                <strong id="total-tarjeta">$0</strong>
+            </div>
+        </div>
+        <div class="indicator-card otros">
+            <i class="fas fa-wallet"></i>
+            <div class="info">
+                <span>Otros</span>
+                <strong id="total-otros">$0</strong>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="ventas-layout">
+        <div class="ventas-main">
+            <section class="search-box-container">
+                <div class="input-with-icon">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="buscador-ventas" 
+                           placeholder="Escriba nombre del producto o escanee código..." 
+                           autocomplete="off" autofocus>
+                    <ul id="lista-sugerencias" class="sugerencias-busqueda"></ul>
+                </div>
+            </section>
+
+            <div class="tabla-container card-shadow">
+                <table class="tabla-ventas" id="tabla-carrito">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="width: 120px;">Cant.</th>
+                            <th>Precio Unitario</th>
+                            <th>Precio Neto</th>
+                            <th>IVA (19%)</th>
+                            <th>Total</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla-ventas">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="top-bar-right">
-            <div class="caja-diaria-group">
-                <div class="indicator-card total-dia">
-                    <i class="fas fa-chart-line"></i>
-                    <div class="info">
-                        <span>Venta Total</span>
-                        <strong id="total-dia-acumulado">$0</strong>
-                    </div>
+        <div class="ventas-sidebar">
+            <div class="resumen-card card-shadow">
+                <h3>Resumen de Venta</h3>
+                
+                <div class="fila-resumen">
+                    <span>Subtotal Neto:</span>
+                    <strong id="total-neto">$0</strong>
                 </div>
-                <div class="indicator-card efectivo">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <div class="info">
-                        <span>Efectivo</span>
-                        <strong id="total-efectivo">$0</strong>
-                    </div>
+                <div class="fila-resumen">
+                    <span>IVA Total (19%):</span>
+                    <strong id="total-iva">$0</strong>
                 </div>
-                <div class="indicator-card tarjeta">
-                    <i class="fas fa-credit-card"></i>
-                    <div class="info">
-                        <span>Tarjeta</span>
-                        <strong id="total-tarjeta">$0</strong>
-                    </div>
+
+                <div class="total-grande">
+                    <p>TOTAL A COBRAR</p>
+                    <h2 id="gran-total">$0</h2>
                 </div>
-                <div class="indicator-card otros">
-                    <i class="fas fa-wallet"></i>
-                    <div class="info">
-                        <span>Otros</span>
-                        <strong id="total-otros">$0</strong>
-                    </div>
+
+                <button class="btn-confirmar-venta" onclick="abrirModalCobro()">
+                    <i class="fas fa-cash-register"></i> COBRAR
+                </button>
+
+                <button class="btn-cancelar-discreto" onclick="cancelarVenta()">
+                    <i class="fas fa-trash"></i> Cancelar Venta
+                </button>
+
+                <div class="acciones-secundarias">
+                    <button class="btn-fiado-discreto" onclick="abrirModalFiado()">
+                        <i class="fas fa-book"></i> Anotar Fiado
+                    </button>
                 </div>
             </div>
         </div>
-    </header>
-
-    <div class="wrapper">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h3>🏪 Mi Negocio</h3>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="/"><i class="fas fa-boxes"></i> Inventario</a></li>
-                <li><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar</a></li>
-                <li class="active"><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
-                <li><a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
-            </ul>
-        </nav>
-
-        <main class="main-content">
-            <div class="container">
-                <header class="main-header">
-                    <h1>🛒 Módulo de Ventas</h1>
-                    <p>Escanee productos o use el buscador manual para predicciones</p>
-                </header>
-
-                <div class="ventas-layout">
-                    <div class="ventas-main">
-                        <section class="search-box-container">
-                            <div class="input-with-icon">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="buscador-ventas" 
-                                       placeholder="Escriba nombre del producto o escanee código..." 
-                                       autocomplete="off" autofocus>
-                                <ul id="lista-sugerencias" class="sugerencias-busqueda"></ul>
-                            </div>
-                        </section>
-
-                        <div class="tabla-container">
-                            <table class="tabla-ventas" id="tabla-carrito">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th>Cant.</th>
-                                        <th>Precio Unitario</th>
-                                        <th>Precio Neto</th>
-                                        <th>IVA (19%)</th>
-                                        <th>Total</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cuerpo-tabla-ventas">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="ventas-sidebar">
-                        <div class="resumen-card">
-                            <h3>Resumen de Venta</h3>
-                            
-                            <div class="fila-resumen">
-                                <span>Subtotal Neto:</span>
-                                <strong id="total-neto">$0</strong>
-                            </div>
-                            <div class="fila-resumen">
-                                <span>IVA Total (19%):</span>
-                                <strong id="total-iva">$0</strong>
-                            </div>
-
-                            <div class="total-grande">
-                                <p>TOTAL A COBRAR</p>
-                                <h2 id="gran-total">$0</h2>
-                            </div>
-
-                            <button class="btn-confirmar-venta" onclick="confirmarVenta()">
-                                <i class="fas fa-check-circle"></i> FINALIZAR VENTA
-                            </button>
-
-                            <button class="btn-cancelar-discreto" onclick="cancelarVenta()">
-                                <i class="fas fa-trash"></i> Cancelar Venta
-                            </button>
-
-                            <div class="acciones-secundarias">
-                                <button class="btn-fiado-discreto" onclick="abrirModalFiado()">
-                                    <i class="fas fa-book"></i> Anotar Fiado
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div> </div> </main>
     </div>
 
+    <div id="modal-cobro" class="modal">
+    <div class="modal-content card-shadow">
+        <div class="modal-header">
+            <h2><i class="fas fa-cash-register"></i> Finalizar Venta</h2>
+            <span class="close-modal" onclick="cerrarModal()">&times;</span>
+        </div>
+        
+        <div class="modal-body">
+            <div class="total-pago-display">
+                <span>Total a Cobrar</span>
+                <h1 id="modal-total-grande">$0</h1>
+            </div>
+
+            <label class="label-seccion">Método de Pago:</label>
+            <div class="metodo-pago-grid">
+                <div class="metodo-item active" onclick="seleccionarMetodo(this, 'efectivo')">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Efectivo</span>
+                </div>
+                <div class="metodo-item" onclick="seleccionarMetodo(this, 'tarjeta')">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Tarjeta</span>
+                </div>
+                <div class="metodo-item" onclick="seleccionarMetodo(this, 'otros')">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Otros</span>
+                </div>
+            </div>
+            <input type="hidden" id="metodo-seleccionado" value="efectivo">
+
+            <div id="seccion-efectivo">
+                <div class="input-pago-container">
+                    <label>Paga con:</label>
+                    <input type="number" id="monto-recibido" placeholder="Ej: 5000">
+                </div>
+                <div class="vuelto-box">
+                    <span>Su Vuelto:</span>
+                    <strong id="vuelto-cliente">$0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-volver" onclick="cerrarModal()">VOLVER</button>
+            <button class="btn-finalizar-venta" onclick="procesarVentaFinal()">
+                CONFIRMAR COBRO
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
     <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
-</body>
-</html>
+    <script>
+        // Función extra para el botón de cancelar venta rápida
+        function cancelarVenta() {
+            if (confirm("¿Estás seguro de que deseas vaciar el carrito?")) {
+                document.getElementById('cuerpo-tabla-ventas').innerHTML = "";
+                actualizarTotalesGenerales();
+            }
+        }
+    </script>
+{% endblock %}
