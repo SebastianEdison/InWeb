@@ -3,16 +3,47 @@
 {% block title %}Ingreso de Mercadería - Mi Negocio{% endblock %}
 
 {% block topbar_stats %}
-
 {% endblock %}
+
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
+    <style>
+        /* Ajuste para el selector de unidad */
+        .input-grupal-stock {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        /* El contenedor de medida nace oculto */
+        #contenedor-medida {
+            display: none; 
+            flex: 1;
+        }
+
+        #columna-cantidad {
+            flex: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .select-moderno {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
 {% endblock %}
+
 {% block content %}
 <div class="header-seccion-central">
     <h1><i class="fas fa-boxes"></i> Ingreso de Mercadería</h1>
     <p>Escanee productos para registrar o actualizar stock en el inventario</p>
 </div>
+
 <div class="registro-wrapper">
     <div class="panel-configuracion">
         <div class="seccion-header">
@@ -45,6 +76,7 @@
                 <i class="fas fa-search icon-search-inside"></i>
             </div>
             <small id="helper-identificador">El lector está listo para escanear</small>
+            <input type="hidden" id="tipo_registro_actual" value="codigo">
         </div>
     </div>
 
@@ -72,9 +104,19 @@
             </div>
 
             <div class="stock-container-modern">
-                <div class="form-group">
-                    <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
-                    <input type="number" id="form_stock" placeholder="0">
+                <div class="input-grupal-stock">
+                    <div class="form-group" id="columna-cantidad">
+                        <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
+                        <input type="number" id="form_stock" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group" id="contenedor-medida">
+                        <label class="lbl-blue"><i class="fas fa-weight"></i> Medida</label>
+                        <select id="form_unidad" class="select-moderno">
+                            <option value="Unidad">Unidad</option>
+                            <option value="Kg">Kilogramo</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="opcion-sin-stock">
@@ -93,7 +135,7 @@
                 <button type="submit" class="btn-guardar-pro">
                     <i class="fas fa-check-circle"></i> REGISTRAR PRODUCTO EN SISTEMA
                 </button>
-                <button type="button" class="btn-limpiar-pro" onclick="resetTodo()">
+                <button type="button" class="btn-limpiar-pro" onclick="resetearTodo()">
                     <i class="fas fa-undo"></i> Limpiar Todo
                 </button>
             </div>
@@ -105,40 +147,47 @@
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
     <script>
-        // Función para cambiar entre 'Código' y 'Peso' visualmente
-        function seleccionarTipoRegistro(tipo) {
-            // Guardar el tipo actual
+        // Esta función ahora controla visualmente los contenedores
+        function seleccionarTipo(tipo) {
             document.getElementById('tipo_registro_actual').value = tipo;
             
-            // Cambiar clases activas en los botones (como en el modal de ventas)
-            document.getElementById('btn-con-codigo').classList.remove('active');
-            document.getElementById('btn-por-peso').classList.remove('active');
-            
+            const btnCodigo = document.getElementById('btn-con-codigo');
+            const btnPeso = document.getElementById('btn-por-peso');
             const searchInput = document.getElementById('codigo_search');
-            const labelLector = document.getElementById('texto-estado-lector');
+            
+            // Referencias a los nuevos IDs
+            const contenedorMedida = document.getElementById('contenedor-medida');
+            const columnaCantidad = document.getElementById('columna-cantidad');
+            const selectUnidad = document.getElementById('form_unidad');
+            
+            btnCodigo.classList.remove('active');
+            btnPeso.classList.remove('active');
             
             if (tipo === 'codigo') {
-                document.getElementById('btn-con-codigo').classList.add('active');
-                labelLector.textContent = "LECTOR DE CÓDIGO ACTIVO";
+                btnCodigo.classList.add('active');
                 searchInput.placeholder = "Escanea el código de barras...";
-                document.getElementById('btn-nuevo-peso').style.display = 'none';
+                
+                // OCULTAR MEDIDA
+                if(contenedorMedida) contenedorMedida.style.display = 'none';
+                if(columnaCantidad) columnaCantidad.style.flex = "1";
+                if(selectUnidad) selectUnidad.value = "Unidad"; 
+
             } else {
-                document.getElementById('btn-por-peso').classList.add('active');
-                labelLector.textContent = "MODO PRODUCTO POR PESO";
-                searchInput.placeholder = "Busca por nombre o ID interno...";
-                // Aquí podrías mostrar un botón de "Nuevo Producto a Granel" si no existe
+                btnPeso.classList.add('active');
+                searchInput.placeholder = "Producto artesanal (ID se creará al guardar)";
+                
+                // MOSTRAR MEDIDA
+                if(contenedorMedida) contenedorMedida.style.display = 'block';
+                if(columnaCantidad) columnaCantidad.style.flex = "2";
+                if(selectUnidad) selectUnidad.value = "Kg"; 
             }
-            
-            resetearBuscador();
             searchInput.focus();
         }
 
-        // Mantener el foco en el buscador siempre
+        // Mantener el foco
         document.addEventListener('click', (e) => {
             const search = document.getElementById('codigo_search');
-            const form = document.getElementById('form-ingreso-producto');
-            // Solo reenfocar si el formulario está oculto
-            if (search && form.style.display === 'none') {
+            if (search && !e.target.closest('.panel-formulario')) {
                 search.focus();
             }
         });

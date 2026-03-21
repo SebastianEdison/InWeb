@@ -3,6 +3,14 @@
 {% block title %}Ventas - Mi Negocio{% endblock %}
 
 {% block topbar_stats %}
+    <div class="seccion-caja-final" style="text-align: right; margin-top: 10px;">
+        <button type="button" 
+                onclick="solicitarCierreTurno()" 
+                class="btn-mini-cierre" 
+                style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-right: 15px; transition: all 0.2s;">
+            <i class="fas fa-power-off"></i> Cerrar Caja
+        </button>
+    </div>
     <div class="caja-diaria-group">
         <div class="indicator-card total-dia">
             <i class="fas fa-chart-line"></i>
@@ -102,64 +110,143 @@
         </div>
     </div>
 
+    <!-- ===================== MODAL COBRO ===================== -->
     <div id="modal-cobro" class="modal">
-    <div class="modal-content card-shadow">
-        <div class="modal-header">
-            <h2><i class="fas fa-cash-register"></i> Finalizar Venta</h2>
-            <span class="close-modal" onclick="cerrarModal()">&times;</span>
-        </div>
-        
-        <div class="modal-body">
-            <div class="total-pago-display">
-                <span>Total a Cobrar</span>
-                <h1 id="modal-total-grande">$0</h1>
+        <div class="modal-content card-shadow">
+            <div class="modal-header">
+                <h2><i class="fas fa-cash-register"></i> Finalizar Venta</h2>
+                <span class="close-modal" onclick="cerrarModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <div class="total-pago-display">
+                    <span>Total a Cobrar</span>
+                    <h1 id="modal-total-grande">$0</h1>
+                </div>
+
+                <label class="label-seccion">Método de Pago:</label>
+                <div class="metodo-pago-grid">
+                    <div class="metodo-item active" onclick="seleccionarMetodo(this, 'efectivo')">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Efectivo</span>
+                    </div>
+                    <div class="metodo-item" onclick="seleccionarMetodo(this, 'tarjeta')">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Tarjeta</span>
+                    </div>
+                    <div class="metodo-item" onclick="seleccionarMetodo(this, 'otros')">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Otros</span>
+                    </div>
+                </div>
+                <input type="hidden" id="metodo-seleccionado" value="efectivo">
+
+                <div id="seccion-efectivo">
+                    <div class="input-pago-container">
+                        <label>Paga con:</label>
+                        <input type="number" id="monto-recibido" placeholder="Ej: 5000">
+                    </div>
+                    <div class="vuelto-box">
+                        <span>Su Vuelto:</span>
+                        <strong id="vuelto-cliente">$0</strong>
+                    </div>
+                </div>
             </div>
 
-            <label class="label-seccion">Método de Pago:</label>
-            <div class="metodo-pago-grid">
-                <div class="metodo-item active" onclick="seleccionarMetodo(this, 'efectivo')">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <span>Efectivo</span>
-                </div>
-                <div class="metodo-item" onclick="seleccionarMetodo(this, 'tarjeta')">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Tarjeta</span>
-                </div>
-                <div class="metodo-item" onclick="seleccionarMetodo(this, 'otros')">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>Otros</span>
-                </div>
+            <div class="modal-footer">
+                <button class="btn-volver" onclick="cerrarModal()">VOLVER</button>
+                <button class="btn-finalizar-venta" onclick="procesarVentaFinal()">
+                    CONFIRMAR COBRO
+                </button>
             </div>
-            <input type="hidden" id="metodo-seleccionado" value="efectivo">
-
-            <div id="seccion-efectivo">
-                <div class="input-pago-container">
-                    <label>Paga con:</label>
-                    <input type="number" id="monto-recibido" placeholder="Ej: 5000">
-                </div>
-                <div class="vuelto-box">
-                    <span>Su Vuelto:</span>
-                    <strong id="vuelto-cliente">$0</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button class="btn-volver" onclick="cerrarModal()">VOLVER</button>
-            <button class="btn-finalizar-venta" onclick="procesarVentaFinal()">
-                CONFIRMAR COBRO
-            </button>
         </div>
     </div>
-</div>
-</div>
+
+    <!-- ===================== MODAL MONTO (Productos por Kg) ===================== -->
+    <div id="modal-peso" style="display:none; position:fixed; z-index:10000;
+         left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.55);
+         align-items:center; justify-content:center;">
+
+        <div style="background:white; max-width:380px; width:90%; border-radius:16px;
+                    overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+
+            <!-- Header -->
+            <div style="background:#f8fafc; padding:18px 25px; border-bottom:1px solid #e2e8f0;
+                        display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.1rem; color:#1e293b; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-shopping-basket" style="color:#3b82f6;"></i> Ingresa el Monto
+                </h2>
+                <span onclick="cerrarModalPeso()"
+                      style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:25px;">
+
+                <!-- Info producto -->
+                <div style="background:#eff6ff; border-radius:10px; padding:15px;
+                            margin-bottom:20px; text-align:center;">
+                    <p style="color:#64748b; font-size:0.75rem; margin:0 0 4px 0;
+                               text-transform:uppercase; letter-spacing:0.5px;">Producto</p>
+                    <strong id="modal-peso-nombre" style="font-size:1.1rem; color:#1e293b; display:block;"></strong>
+                    <p id="modal-peso-precio" style="color:#3b82f6; font-weight:700; margin:6px 0 0 0;"></p>
+                </div>
+
+                <!-- Input monto -->
+                <div style="margin-bottom:20px;">
+                    <label style="font-weight:700; color:#475569; display:flex; align-items:center;
+                                  gap:8px; margin-bottom:10px; font-size:0.85rem;
+                                  text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="fas fa-dollar-sign" style="color:#3b82f6;"></i> ¿Cuánto cobra?
+                    </label>
+                    <div style="display:flex; align-items:center; border:2px solid #e2e8f0;
+                                border-radius:12px; overflow:hidden; transition:border-color 0.2s;"
+                         id="input-monto-wrapper">
+                        <span style="padding:0 15px; font-size:1.4rem; color:#94a3b8;
+                                     border-right:2px solid #e2e8f0; background:#f8fafc;">$</span>
+                        <input type="number" id="input-kg"
+                               placeholder="0"
+                               step="1" min="1"
+                               oninput="calcularTotalPeso()"
+                               onkeydown="if(event.key==='Enter') confirmarProductoPeso()"
+                               onfocus="document.getElementById('input-monto-wrapper').style.borderColor='#3b82f6'"
+                               onblur="document.getElementById('input-monto-wrapper').style.borderColor='#e2e8f0'"
+                               style="width:100%; padding:16px; font-size:1.6rem; font-weight:700;
+                                      border:none; outline:none; color:#1e293b; text-align:center;">
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div style="background:#1e293b; border-radius:12px; padding:16px; text-align:center;">
+                    <p style="color:#94a3b8; font-size:0.75rem; margin:0 0 4px 0;
+                               text-transform:uppercase; letter-spacing:1px;">Total a cobrar</p>
+                    <strong id="modal-peso-total" style="font-size:2rem; color:#4ade80; display:block;">$0</strong>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                        display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="cerrarModalPeso()"
+                        style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                               background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                    Cancelar
+                </button>
+                <button onclick="confirmarProductoPeso()"
+                        style="padding:10px 24px; border-radius:8px; border:none; background:#3b82f6;
+                               color:white; font-weight:700; cursor:pointer; font-size:1rem;
+                               display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
     <script>
-        // Función extra para el botón de cancelar venta rápida
         function cancelarVenta() {
             if (confirm("¿Estás seguro de que deseas vaciar el carrito?")) {
                 document.getElementById('cuerpo-tabla-ventas').innerHTML = "";

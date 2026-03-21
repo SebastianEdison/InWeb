@@ -15,16 +15,16 @@
     </div>
 
     <div class="reportes-grid">
-        <div class="card-metrica card-ingresos">
-            <div class="card-icon"><i class="fas fa-vault"></i></div>
+        <div class="card-metrica card-ingresos" onclick="mostrarDetalle('diario')" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-cash-register"></i></div>
             <div class="card-content">
-                <span class="label">Ingresos Reales</span>
+                <span class="label">Informes diarios</span>
                 <h2 id="rep-ingresos">$0</h2>
-                <span class="trend">Efectivo + Tarjeta</span>
+                <span class="trend">Historial de cierres</span>
             </div>
         </div>
 
-        <div class="card-metrica card-fiados">
+        <div class="card-metrica card-fiados" onclick="mostrarDetalle('diario')" style="cursor:pointer;">
             <div class="card-icon"><i class="fas fa-user-clock"></i></div>
             <div class="card-content">
                 <span class="label">Fiados por Cobrar</span>
@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <div class="card-metrica card-muertos">
+        <div class="card-metrica card-muertos" onclick="mostrarDetalle('muertos')" style="cursor:pointer;">
             <div class="card-icon"><i class="fas fa-ghost"></i></div>
             <div class="card-content">
                 <span class="label">Productos Muertos</span>
@@ -42,7 +42,7 @@
             </div>
         </div>
 
-        <div class="card-metrica card-vencer">
+        <div class="card-metrica card-vencer" onclick="mostrarDetalle('vencer')" style="cursor:pointer;">
             <div class="card-icon"><i class="fas fa-calendar-times"></i></div>
             <div class="card-content">
                 <span class="label">Próximos a Vencer</span>
@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <div class="card-metrica card-config" onclick="location.href='/configuracion'">
+        <div class="card-metrica card-config" onclick="location.href='/configuracion'" style="cursor:pointer;">
             <div class="card-icon"><i class="fas fa-cog"></i></div>
             <div class="card-content">
                 <span class="label">Configuración</span>
@@ -62,17 +62,17 @@
     </div>
 
     <div class="reportes-detalle">
-        <div class="detalle-tabs">
-            <button class="tab-link active" onclick="verDetalle('muertos', this)">
-                <i class="fas fa-ghost"></i> Ver Productos Muertos
-            </button>
-            <button class="tab-link" onclick="verDetalle('vencer', this)">
-                <i class="fas fa-calendar-times"></i> Ver Por Vencer
-            </button>
-        </div>
-        
         <div class="tabla-container">
-            <h3 id="titulo-detalle">Lista de Productos Muertos</h3>
+            
+            <div class="detalle-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="titulo-detalle">Selecciona una tarjeta para ver detalle</h3>
+                
+                <div id="contenedor-filtro" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="fecha-busqueda" style="font-size: 0.9rem; color: #64748b;">Ver fecha:</label>
+                    <input type="date" id="fecha-busqueda" class="input-fecha">
+                </div>
+            </div>
+
             <table class="tabla-reporte">
                 <thead>
                     <tr id="tabla-header">
@@ -84,4 +84,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/reportes.js') }}"></script>
 {% endblock %}

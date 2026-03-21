@@ -1,7 +1,9 @@
 /* --- CONTENEDOR PRINCIPAL --- */
 .reportes-wrapper {
     padding: 20px;
-    animation: fadeIn 0.5s ease;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* --- HEADER Y FILTROS --- */
@@ -14,9 +16,11 @@
     margin-bottom: 30px;    /* Espacio con las tarjetas */
     width: 100%;             /* Ocupa todo el ancho */
 }
-
+.reportes-header p {
+    color: #64748b;
+}
 .header-text h1 {
-    font-size: 1.8rem;
+    font-size: 2rem;
     color: #1e293b;
     margin-bottom: 5px; /* Espacio con la descripción */
 }
@@ -58,13 +62,14 @@
 
 .card-metrica {
     background: white;
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 20px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #f1f5f9;
 }
 
 .card-metrica:hover {
@@ -74,32 +79,31 @@
 
 /* Estilo de los Iconos (Círculos de color) */
 .card-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
-    color: white;
 }
 
 .card-content .label {
+    display: block;
     font-size: 0.85rem;
     color: #64748b;
     font-weight: 600;
-    text-transform: uppercase;
 }
 
 .card-content h2 {
-    font-size: 1.5rem;
     margin: 5px 0;
-    color: #0f172a;
+    font-size: 1.5rem;
+    color: #1e293b;
 }
 
 .card-content .trend {
     font-size: 0.75rem;
-    font-weight: 500;
+    color: #94a3b8;
 }
 
 /* --- COLORES PERSONALIZADOS (Basados en tu imagen de referencia) --- */
@@ -127,9 +131,10 @@
 /* --- TABLA DE DETALLES --- */
 .reportes-detalle {
     background: white;
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f1f5f9;
 }
 
 .detalle-tabs {
@@ -164,4 +169,67 @@
     margin: 20px 0;
     color: #1e293b;
     font-size: 1.2rem;
+}
+.detalle-header {
+    border-bottom: 2px solid #f8fafc;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+/* Estilo del Buscador de Fecha */
+.input-fecha {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-fecha:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* --- Tabla de Reportes --- */
+.tabla-reporte {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.tabla-reporte th {
+    background: #f8fafc;
+    padding: 12px 15px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.tabla-reporte td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+/* Desglose de pagos dentro de la tabla */
+.desglose-pagos span {
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.desglose-pagos i {
+    width: 18px;
+    margin-right: 5px;
+}
+
+.badge-estado {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.btn-accion-tabla:hover i {
+    color: #3b82f6 !important;
 }

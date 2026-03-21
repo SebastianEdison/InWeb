@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reportes-wrapper" style="max-width: 500px; margin: 20px auto;">
+    <div class="reportes-detalle" style="text-align: center; border: 2px solid #e2e8f0; padding: 30px; border-radius: 15px; background: white;">
+        <i class="fas fa-check-circle" style="font-size: 3.5rem; color: #10b981; margin-bottom: 15px;"></i>
+        <h1 style="color: #1e293b;">Cierre de Caja Exitoso</h1>
+        <p style="color: #64748b;">Turno finalizado: <strong>{{ cierre.fecha | default('Pendiente') }}</strong></p>
+        
+        <div style="margin: 25px 0; padding: 20px; background: #f8fafc; border-radius: 12px; text-align: left;">
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span><i class="fas fa-money-bill-wave"></i> Efectivo:</span>
+                <strong>${{ "{:,.0f}".format(cierre.efectivo | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span><i class="far fa-credit-card"></i> Tarjeta:</span>
+                <strong>${{ "{:,.0f}".format(cierre.tarjeta | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span><i class="fas fa-wallet"></i> Otros:</span>
+                <strong>${{ "{:,.0f}".format(cierre.otros | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <hr style="border: 1px dashed #cbd5e1; margin: 15px 0;">
+
+            <div style="display: flex; justify-content: space-between; font-size: 1.3rem; color: #0f172a;">
+                <strong>TOTAL EN CAJA:</strong>
+                <strong>${{ "{:,.0f}".format(cierre.total | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #e2e8f0; color: #64748b;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-user-tag"></i> Fiados (Deuda):</span>
+                    <span>${{ "{:,.0f}".format(cierre.fiados | default(0)).replace(",", ".") }}</span>
+                </div>
+                <small style="display: block; margin-top: 5px; font-style: italic;">* No incluido en el total de caja.</small>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="window.print()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #cbd5e1; cursor: pointer; background: white;">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="/reportes" style="padding: 10px 20px; background: #3b82f6; color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                Ir a Reportes
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

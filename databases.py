@@ -21,7 +21,8 @@ def crear_tablas():
                     precio_venta REAL NOT NULL,
                     costo REAL,
                     stock INTEGER DEFAULT 0 CHECK(stock >= 0) ,
-                    activo INTEGER DEFAULT 1
+                    activo INTEGER DEFAULT 1,
+                    unidad TEXT DEFAULT 'Unidad'
                     );
     """)
 
@@ -57,40 +58,54 @@ def crear_tablas():
                 FOREIGN KEY (producto_id) REFERENCES productos(id)
                 );
     """)
+    # NUEVA TABLA DE CIERRES
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cierres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT,
+            efectivo INTEGER,
+            tarjeta INTEGER,
+            otros INTEGER,
+            fiados INTEGER,
+            total INTEGER,
+            turno TEXT
+        )
+    ''')
 
     conexion.commit()
     conexion.close()
 
-def agregar_producto(codigo, nombre, precio, costo, stock):
+def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad'):
     conexion = conectar()
+    # Usamos Row para poder acceder por nombre de columna como hiciste en tu código
+    conexion.row_factory = sqlite3.Row 
     cursor = conexion.cursor()
     
     try:
-        # 1. Primero verificamos si el producto ya existe por su código de barras
+        # 1. Verificamos si existe
         cursor.execute("SELECT id, stock FROM productos WHERE codigo_barra = ?", (codigo,))
         existente = cursor.fetchone()
 
         if existente:
-            # 2. SI EXISTE: Calculamos el nuevo stock sumando el actual + el nuevo
+            # 2. SI EXISTE: Actualizamos datos y sumamos stock
             id_producto = existente['id']
             stock_actual = existente['stock']
             nuevo_total = stock_actual + int(stock)
             
-            # Actualizamos los datos y sumamos el stock
             cursor.execute("""
                 UPDATE productos 
-                SET nombre = ?, precio_venta = ?, costo = ?, stock = ?
+                SET nombre = ?, precio_venta = ?, costo = ?, stock = ?, unidad = ?
                 WHERE id = ?
-            """, (nombre, precio, costo, nuevo_total, id_producto))
-            print(f"✅ Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
+            """, (nombre, precio, costo, nuevo_total, unidad, id_producto))
+            print(f"✅ Producto '{nombre}' actualizado ({unidad}). Nuevo stock: {nuevo_total}")
             
         else:
-            # 3. SI NO EXISTE: Insertamos el registro nuevo normalmente
+            # 3. SI NO EXISTE: Insertamos con la nueva columna 'unidad'
             cursor.execute("""
-                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock)
-                VALUES (?, ?, ?, ?, ?)
-            """, (codigo, nombre, precio, costo, stock))
-            print(f"✨ Nuevo producto '{nombre}' registrado con éxito")
+                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (codigo, nombre, precio, costo, stock, unidad))
+            print(f"✨ Nuevo producto '{nombre}' registrado como {unidad}")
 
         conexion.commit()
 
@@ -98,7 +113,7 @@ def agregar_producto(codigo, nombre, precio, costo, stock):
         conexion.rollback()
         print(f"❌ Error al procesar producto: {e}")
     finally:
-        conexion.close()  
+        conexion.close()
             
 def obtener_productos(nombre_buscar=None):
     conexion = conectar()
@@ -109,11 +124,11 @@ def obtener_productos(nombre_buscar=None):
         if nombre_buscar:
             param =f"%{nombre_buscar}%"
             #Buscamos por nombre o por codigo de baara con LIKE            
-            sql= "SELECT * FROM productos WHERE (nombre LIKE ? or codigo_barra LIKE ?) AND activo =1"            
+            sql= "SELECT * FROM productos WHERE (nombre LIKE ? or codigo_barra LIKE ?)"            
             cursor.execute(sql,(param, param))
         
         else:
-            sql ="SELECT * FROM productos WHERE activo = 1"
+            sql ="SELECT * FROM productos"
             cursor.execute(sql)
         
         resultados = cursor.fetchall()
@@ -316,27 +331,27 @@ def eliminar_producto(id_recibido):
     
     conexion.commit()
     conexion.close()
-# Formato: (codigo, nombre, precio_venta, costo_compra, stock)
-#agregar_producto('1123459', 'helado', 250, 85, 30)    
-#agregar_producto('1123460', 'Cafe', 4500,3800, 24) 
-#agregar_producto('1123461', 'mantequilla', 2250, 1800, 20) 
-#agregar_producto('1123462', 'yogurt', 400, 270, 12) 
-#agregar_producto('1123463', 'Pilas AAA', 800, 650, 12) 
-#agregar_producto('1123464', 'Bebida', 1850, 1700, 40) 
-#agregar_producto('1123465', 'galletas', 1400, 1100, 2)     
-#-----------------------------------------------------------------
-# Simulamos que escaneamos dos productos
-#mi_carrito = [
-#    {'id': 1, 'cantidad': 2, 'precio': 1200}, # 2 Leches
-    #{'id': 2, 'cantidad': 1, 'precio': 2200}  # 1 Pan
-#]
 
-# Probar venta en Efectivo (por defecto)
-#registrar_venta(mi_carrito)
+# Añade estas funciones al final del archivo para manejar los datos
+def guardar_cierre_db(datos):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO cierres (fecha, efectivo, tarjeta, otros, fiados, total, turno)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        datos['fecha'], datos['efectivo'], datos['tarjeta'], 
+        datos['otros'], datos['fiados'], datos['total'], 'Único'
+    ))
+    conn.commit()
+    conn.close()
 
-# Probar venta con Tarjeta
-#registrar_venta(mi_carrito, "Tarjeta")
-
-# Probar venta con Billetera Digital (Mercado Pago)
-#registrar_venta(mi_carrito, "Billetera Digital")
-
+def obtener_historial_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM cierres ORDER BY id DESC')
+    # Convertimos a lista de diccionarios para que Flask lo lea fácil
+    columnas = [column[0] for column in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
