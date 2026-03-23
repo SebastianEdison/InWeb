@@ -94,6 +94,73 @@ def api_historial():
     historial = obtener_historial_db()
     return jsonify({'cierres': historial})
 
+@app.route('/api/ventas_por_dia')
+def api_ventas_por_dia():
+    try:
+        fecha = request.args.get('fecha', '')
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # Traer ventas agrupadas por día
+        if fecha:
+            cursor.execute("""
+                SELECT 
+                    DATE(fecha) as dia,
+                    COUNT(*) as total_ventas,
+                    SUM(total) as total_dia,
+                    SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
+                    SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
+                    SUM(CASE WHEN metodo_pago = 'otros' THEN total ELSE 0 END) as otros
+                FROM ventas
+                WHERE DATE(fecha) = ?
+                GROUP BY DATE(fecha)
+                ORDER BY dia DESC
+            """, (fecha,))
+        else:
+            cursor.execute("""
+                SELECT 
+                    DATE(fecha) as dia,
+                    COUNT(*) as total_ventas,
+                    SUM(total) as total_dia,
+                    SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
+                    SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
+                    SUM(CASE WHEN metodo_pago = 'otros' THEN total ELSE 0 END) as otros
+                FROM ventas
+                GROUP BY DATE(fecha)
+                ORDER BY dia DESC
+            """)
+
+        dias = [dict(row) for row in cursor.fetchall()]
+
+        # Para cada día, traer el detalle de cada venta
+        for dia in dias:
+            cursor.execute("""
+                SELECT v.id, v.fecha, v.total, v.metodo_pago
+                FROM ventas v
+                WHERE DATE(v.fecha) = ?
+                ORDER BY v.fecha DESC
+            """, (dia['dia'],))
+            ventas = [dict(row) for row in cursor.fetchall()]
+
+            # Para cada venta, traer sus productos
+            for venta in ventas:
+                cursor.execute("""
+                    SELECT p.nombre, dv.cantidad, dv.precio_unitario, dv.subtotal
+                    FROM detalle_venta dv
+                    JOIN productos p ON p.id = dv.producto_id
+                    WHERE dv.venta_id = ?
+                """, (venta['id'],))
+                venta['productos'] = [dict(row) for row in cursor.fetchall()]
+
+            dia['ventas'] = ventas
+
+        conn.close()
+        return jsonify({'dias': dias})
+
+    except Exception as e:
+        print(f"Error en ventas_por_dia: {e}")
+        return jsonify({'dias': [], 'error': str(e)}), 500
+
 @app.route('/detalle_cierre')
 def detalle_cierre():
     return render_template('detalle_cierre.html', cierre=cierre_reciente_ticket)
