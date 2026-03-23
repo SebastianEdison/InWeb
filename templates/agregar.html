@@ -144,50 +144,14 @@
 </div>
 {% endblock %}
 
+
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
     <script>
-        // Esta función ahora controla visualmente los contenedores
-        function seleccionarTipo(tipo) {
-            document.getElementById('tipo_registro_actual').value = tipo;
-            
-            const btnCodigo = document.getElementById('btn-con-codigo');
-            const btnPeso = document.getElementById('btn-por-peso');
-            const searchInput = document.getElementById('codigo_search');
-            
-            // Referencias a los nuevos IDs
-            const contenedorMedida = document.getElementById('contenedor-medida');
-            const columnaCantidad = document.getElementById('columna-cantidad');
-            const selectUnidad = document.getElementById('form_unidad');
-            
-            btnCodigo.classList.remove('active');
-            btnPeso.classList.remove('active');
-            
-            if (tipo === 'codigo') {
-                btnCodigo.classList.add('active');
-                searchInput.placeholder = "Escanea el código de barras...";
-                
-                // OCULTAR MEDIDA
-                if(contenedorMedida) contenedorMedida.style.display = 'none';
-                if(columnaCantidad) columnaCantidad.style.flex = "1";
-                if(selectUnidad) selectUnidad.value = "Unidad"; 
-
-            } else {
-                btnPeso.classList.add('active');
-                searchInput.placeholder = "Producto artesanal (ID se creará al guardar)";
-                
-                // MOSTRAR MEDIDA
-                if(contenedorMedida) contenedorMedida.style.display = 'block';
-                if(columnaCantidad) columnaCantidad.style.flex = "2";
-                if(selectUnidad) selectUnidad.value = "Kg"; 
-            }
-            searchInput.focus();
-        }
-
-        // Mantener el foco
+        // Mantener el foco en el buscador al hacer clic fuera del formulario
         document.addEventListener('click', (e) => {
             const search = document.getElementById('codigo_search');
-            if (search && !e.target.closest('.panel-formulario')) {
+            if (search && !e.target.closest('.panel-formulario') && !search.readOnly) {
                 search.focus();
             }
         });

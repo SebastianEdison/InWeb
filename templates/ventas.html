@@ -170,7 +170,6 @@
         <div style="background:white; max-width:380px; width:90%; border-radius:16px;
                     overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
 
-            <!-- Header -->
             <div style="background:#f8fafc; padding:18px 25px; border-bottom:1px solid #e2e8f0;
                         display:flex; justify-content:space-between; align-items:center;">
                 <h2 style="font-size:1.1rem; color:#1e293b; margin:0; display:flex; align-items:center; gap:8px;">
@@ -180,10 +179,7 @@
                       style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
             </div>
 
-            <!-- Body -->
             <div style="padding:25px;">
-
-                <!-- Info producto -->
                 <div style="background:#eff6ff; border-radius:10px; padding:15px;
                             margin-bottom:20px; text-align:center;">
                     <p style="color:#64748b; font-size:0.75rem; margin:0 0 4px 0;
@@ -192,7 +188,6 @@
                     <p id="modal-peso-precio" style="color:#3b82f6; font-weight:700; margin:6px 0 0 0;"></p>
                 </div>
 
-                <!-- Input monto -->
                 <div style="margin-bottom:20px;">
                     <label style="font-weight:700; color:#475569; display:flex; align-items:center;
                                   gap:8px; margin-bottom:10px; font-size:0.85rem;
@@ -205,8 +200,7 @@
                         <span style="padding:0 15px; font-size:1.4rem; color:#94a3b8;
                                      border-right:2px solid #e2e8f0; background:#f8fafc;">$</span>
                         <input type="number" id="input-kg"
-                               placeholder="0"
-                               step="1" min="1"
+                               placeholder="0" step="1" min="1"
                                oninput="calcularTotalPeso()"
                                onkeydown="if(event.key==='Enter') confirmarProductoPeso()"
                                onfocus="document.getElementById('input-monto-wrapper').style.borderColor='#3b82f6'"
@@ -216,7 +210,6 @@
                     </div>
                 </div>
 
-                <!-- Total -->
                 <div style="background:#1e293b; border-radius:12px; padding:16px; text-align:center;">
                     <p style="color:#94a3b8; font-size:0.75rem; margin:0 0 4px 0;
                                text-transform:uppercase; letter-spacing:1px;">Total a cobrar</p>
@@ -224,7 +217,6 @@
                 </div>
             </div>
 
-            <!-- Footer -->
             <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
                         display:flex; gap:12px; justify-content:flex-end;">
                 <button onclick="cerrarModalPeso()"
@@ -237,6 +229,91 @@
                                color:white; font-weight:700; cursor:pointer; font-size:1rem;
                                display:flex; align-items:center; gap:8px;">
                     <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL CIERRE DE CAJA ===================== -->
+    <div id="modal-cierre" style="display:none; position:fixed; z-index:10000;
+         left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+         align-items:center; justify-content:center;">
+
+        <div style="background:white; max-width:420px; width:92%; border-radius:16px;
+                    overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+
+            <!-- Header -->
+            <div style="background:#fef2f2; padding:18px 25px; border-bottom:1px solid #fecaca;
+                        display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.1rem; color:#b91c1c; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-power-off"></i> Cerrar Caja
+                </h2>
+                <span onclick="cerrarModalCierre()"
+                      style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:25px;">
+
+                <p style="color:#475569; text-align:center; margin-bottom:20px; font-size:0.95rem;">
+                    ¿Confirmas el cierre del turno? Se guardará el siguiente resumen:
+                </p>
+
+                <!-- Resumen del turno -->
+                <div style="background:#f8fafc; border-radius:12px; padding:18px; margin-bottom:20px;">
+
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                        <span style="color:#475569; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-money-bill-wave" style="color:#10b981;"></i> Efectivo
+                        </span>
+                        <strong id="cierre-efectivo" style="color:#1e293b;">$0</strong>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                        <span style="color:#475569; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-credit-card" style="color:#3b82f6;"></i> Tarjeta
+                        </span>
+                        <strong id="cierre-tarjeta" style="color:#1e293b;">$0</strong>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                        <span style="color:#475569; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-wallet" style="color:#f59e0b;"></i> Otros
+                        </span>
+                        <strong id="cierre-otros" style="color:#1e293b;">$0</strong>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                        <span style="color:#64748b; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-user-tag" style="color:#8b5cf6;"></i> Fiados
+                        </span>
+                        <strong id="cierre-fiados" style="color:#64748b;">$0</strong>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; padding:12px 0 4px 0;">
+                        <span style="font-weight:700; color:#1e293b; font-size:1rem;">TOTAL EN CAJA</span>
+                        <strong id="cierre-total" style="font-size:1.2rem; color:#1e293b;">$0</strong>
+                    </div>
+                </div>
+
+                <p style="color:#94a3b8; font-size:0.8rem; text-align:center;">
+                    Este cierre quedará registrado en el historial de Reportes.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                        display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="cerrarModalCierre()"
+                        style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                               background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                    Cancelar
+                </button>
+                <button onclick="confirmarCierreCaja()"
+                        style="padding:10px 24px; border-radius:8px; border:none; background:#b91c1c;
+                               color:white; font-weight:700; cursor:pointer; font-size:1rem;
+                               display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-power-off"></i> Confirmar Cierre
                 </button>
             </div>
         </div>

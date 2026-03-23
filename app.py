@@ -144,7 +144,8 @@ def buscar_producto():
             "nombre": p['nombre'],
             "precio": p['precio_venta'],
             "unidad": p['unidad'],
-            "codigo_barra": p['codigo_barra']
+            "codigo_barra": p['codigo_barra'],
+            "stock": p['stock']
         })
     return jsonify(lista)
 

@@ -65,11 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
         });
 
-        // Ocultar sugerencias al perder foco
         buscador.addEventListener('blur', () => {
-            setTimeout(() => {
-                listaSugerencias.style.display = "none";
-            }, 200);
+            setTimeout(() => { listaSugerencias.style.display = "none"; }, 200);
         });
     }
 
@@ -110,21 +107,39 @@ function agregarAlCarrito(p) {
     const cuerpoTabla = document.getElementById('cuerpo-tabla-ventas');
     let filaExistente = document.querySelector(`tr[data-id="${p.id}"]`);
 
+    // Validación de stock al agregar
+    if (p.stock !== undefined && p.stock !== 999999) {
+        const cantidadActual = filaExistente
+            ? parseInt(filaExistente.querySelector('.celda-cantidad').textContent)
+            : 0;
+        const cantidadNueva = cantidadActual + 1;
+
+        if (cantidadNueva > p.stock) {
+            const confirmar = confirm(
+                `⚠️ Stock insuficiente\n\n` +
+                `"${p.nombre}" solo tiene ${p.stock} unidad(es) disponible(s).\n` +
+                `¿Deseas agregarlo de todas formas?`
+            );
+            if (!confirmar) return;
+        }
+    }
+
     if (filaExistente) {
         const btnSuma = filaExistente.querySelector('.btn-qty-plus');
-        cambiarCantidad(btnSuma, 1, p.precio);
+        cambiarCantidad(btnSuma, 1, p.precio, p.stock);
     } else {
         const nuevaFila = document.createElement('tr');
         nuevaFila.setAttribute('data-id', p.id);
         nuevaFila.setAttribute('data-unidad', 'Unidad');
+        nuevaFila.setAttribute('data-stock', p.stock ?? 999999);
 
         nuevaFila.innerHTML = `
             <td>${p.nombre}</td>
             <td class="col-cantidad">
                 <div class="control-cantidad">
-                    <button class="btn-qty" onclick="cambiarCantidad(this, -1, ${p.precio})">-</button>
+                    <button class="btn-qty" onclick="cambiarCantidad(this, -1, ${p.precio}, ${p.stock ?? 999999})">-</button>
                     <span class="celda-cantidad">1</span>
-                    <button class="btn-qty btn-qty-plus" onclick="cambiarCantidad(this, 1, ${p.precio})">+</button>
+                    <button class="btn-qty btn-qty-plus" onclick="cambiarCantidad(this, 1, ${p.precio}, ${p.stock ?? 999999})">+</button>
                 </div>
             </td>
             <td class="celda-precio-unitario">$${p.precio.toLocaleString('es-CL')}</td>
@@ -166,7 +181,6 @@ function cerrarModalPeso() {
     document.getElementById('buscador-ventas').focus();
 }
 
-// El monto ingresado ES el total directamente
 function calcularTotalPeso() {
     const monto = parseInt(document.getElementById('input-kg').value) || 0;
     document.getElementById('modal-peso-total').textContent = `$${monto.toLocaleString('es-CL')}`;
@@ -220,17 +234,89 @@ function confirmarProductoPeso() {
 }
 
 // ============================================================
+// --- CIERRE DE CAJA ---
+// ============================================================
+
+function solicitarCierreTurno() {
+    const efectivo = parseInt(localStorage.getItem('total_efectivo') || 0);
+    const tarjeta  = parseInt(localStorage.getItem('total_tarjeta')  || 0);
+    const otros    = parseInt(localStorage.getItem('total_otros')    || 0);
+    const fiados   = parseInt(localStorage.getItem('total_fiados')   || 0);
+    const total    = efectivo + tarjeta + otros;
+
+    document.getElementById('cierre-efectivo').textContent = `$${efectivo.toLocaleString('es-CL')}`;
+    document.getElementById('cierre-tarjeta').textContent  = `$${tarjeta.toLocaleString('es-CL')}`;
+    document.getElementById('cierre-otros').textContent    = `$${otros.toLocaleString('es-CL')}`;
+    document.getElementById('cierre-fiados').textContent   = `$${fiados.toLocaleString('es-CL')}`;
+    document.getElementById('cierre-total').textContent    = `$${total.toLocaleString('es-CL')}`;
+
+    document.getElementById('modal-cierre').style.display = 'flex';
+}
+
+function cerrarModalCierre() {
+    document.getElementById('modal-cierre').style.display = 'none';
+}
+
+async function confirmarCierreCaja() {
+    const efectivo = parseInt(localStorage.getItem('total_efectivo') || 0);
+    const tarjeta  = parseInt(localStorage.getItem('total_tarjeta')  || 0);
+    const otros    = parseInt(localStorage.getItem('total_otros')    || 0);
+    const fiados   = parseInt(localStorage.getItem('total_fiados')   || 0);
+
+    const btn = document.querySelector('#modal-cierre button:last-child');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+    try {
+        const response = await fetch('/api/guardar_cierre', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ efectivo, tarjeta, otros, fiados })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            localStorage.removeItem('venta_total_dia');
+            localStorage.removeItem('total_efectivo');
+            localStorage.removeItem('total_tarjeta');
+            localStorage.removeItem('total_otros');
+            localStorage.removeItem('total_fiados');
+            localStorage.removeItem('carrito_actual');
+            window.location.href = '/reportes';
+        } else {
+            alert('Error al guardar el cierre. Intenta de nuevo.');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-power-off"></i> Confirmar Cierre'; }
+        }
+
+    } catch (error) {
+        console.error("Error al cerrar caja:", error);
+        alert('Error de conexión con el servidor.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-power-off"></i> Confirmar Cierre'; }
+    }
+}
+
+// ============================================================
 // --- CANTIDAD Y CÁLCULOS ---
 // ============================================================
 
-function cambiarCantidad(btn, delta, precioBase) {
+function cambiarCantidad(btn, delta, precioBase, stock) {
     const fila = btn.closest('tr');
     const span = fila.querySelector('.celda-cantidad');
 
     let nuevaCant = parseInt(span.textContent) + delta;
     if (nuevaCant < 1) return;
-    span.textContent = nuevaCant;
 
+    // Validación de stock al usar botón +
+    if (delta > 0 && stock !== undefined && stock !== 999999 && nuevaCant > stock) {
+        const confirmar = confirm(
+            `⚠️ Stock insuficiente\n\n` +
+            `Solo hay ${stock} unidad(es) disponible(s).\n` +
+            `¿Deseas agregar de todas formas?`
+        );
+        if (!confirmar) return;
+    }
+
+    span.textContent = nuevaCant;
     recalcularFila(fila, precioBase, nuevaCant);
 }
 
@@ -286,7 +372,8 @@ function guardarEstadoCarrito() {
             nombre:   fila.cells[0].innerText,
             cantidad: cant,
             precio:   precioActual,
-            unidad:   fila.getAttribute('data-unidad')
+            unidad:   fila.getAttribute('data-unidad'),
+            stock:    parseInt(fila.getAttribute('data-stock')) || 999999
         });
     });
     localStorage.setItem('carrito_actual', JSON.stringify(productos));
@@ -298,13 +385,22 @@ function reconstruirCarritoDesdeStorage(productos) {
 }
 
 // ============================================================
-// --- PROCESO DE PAGO (CONECTADO AL BACKEND) ---
+// --- PROCESO DE PAGO ---
 // ============================================================
 
 async function procesarVentaFinal() {
     const totalTexto = document.getElementById('modal-total-grande').textContent;
     const totalVenta = parseInt(totalTexto.replace(/[^0-9]/g, ""));
     const metodo     = document.getElementById('metodo-seleccionado').value;
+
+    // Validar monto en efectivo
+    if (metodo === 'efectivo') {
+        const recibido = parseInt(document.getElementById('monto-recibido').value) || 0;
+        if (recibido < totalVenta) {
+            mostrarAlertaVenta(`❌ El monto ingresado ($${recibido.toLocaleString('es-CL')}) es menor al total a cobrar`, 'error');
+            return;
+        }
+    }
 
     const carrito = [];
     document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
@@ -322,10 +418,7 @@ async function procesarVentaFinal() {
     });
 
     const btnConfirmar = document.querySelector('.btn-finalizar-venta');
-    if (btnConfirmar) {
-        btnConfirmar.disabled = true;
-        btnConfirmar.textContent = 'Procesando...';
-    }
+    if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.textContent = 'Procesando...'; }
 
     try {
         const response = await fetch('/api/registrar_venta', {
@@ -353,10 +446,7 @@ async function procesarVentaFinal() {
         cerrarModal();
         mostrarAlertaVenta('❌ Error de conexión con el servidor', 'error');
     } finally {
-        if (btnConfirmar) {
-            btnConfirmar.disabled = false;
-            btnConfirmar.textContent = 'CONFIRMAR COBRO';
-        }
+        if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = 'CONFIRMAR COBRO'; }
     }
 }
 
@@ -392,10 +482,7 @@ function abrirModalCobro() {
 function cerrarModal() {
     document.getElementById('modal-cobro').style.display = 'none';
     const btnConfirmar = document.querySelector('.btn-finalizar-venta');
-    if (btnConfirmar) {
-        btnConfirmar.disabled = false;
-        btnConfirmar.textContent = 'CONFIRMAR COBRO';
-    }
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = 'CONFIRMAR COBRO'; }
 }
 
 function calcularVuelto() {

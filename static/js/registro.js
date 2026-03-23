@@ -6,45 +6,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 2. SELECCIONAR TIPO (Código vs Peso)
 function seleccionarTipo(tipo) {
+    document.getElementById('tipo_registro_actual').value = tipo;
+    
     const btnCodigo = document.getElementById('btn-con-codigo');
     const btnPeso = document.getElementById('btn-por-peso');
-    const inputBusqueda = document.getElementById('codigo_search');
-    const helperText = document.getElementById('helper-identificador');
-    
-    // Elementos de la unidad de medida
+    const searchInput = document.getElementById('codigo_search');
     const contenedorMedida = document.getElementById('contenedor-medida');
     const columnaCantidad = document.getElementById('columna-cantidad');
     const selectUnidad = document.getElementById('form_unidad');
-
+    
     btnCodigo.classList.remove('active');
     btnPeso.classList.remove('active');
-
-    if (tipo === 'peso') {
-        btnPeso.classList.add('active');
-        inputBusqueda.value = "AUTO-GENERADO";
-        inputBusqueda.readOnly = true;
-        helperText.innerText = "Producto artesanal (ID se creará al guardar)";
-        
-        // Muestra el selector de medida y ajusta anchos
-        if(contenedorMedida) contenedorMedida.style.display = 'block';
-        if(columnaCantidad) columnaCantidad.style.flex = "2";
-        if(selectUnidad) selectUnidad.value = "Kg"; // Por defecto Kg en este modo
-
-        document.getElementById('form_nombre').focus();
-    } else {
+    
+    if (tipo === 'codigo') {
         btnCodigo.classList.add('active');
-        inputBusqueda.value = "";
-        inputBusqueda.readOnly = false;
-        inputBusqueda.placeholder = "Escanea el código...";
-        helperText.innerText = "El lector está listo para escanear";
-        
-        // Oculta el selector de medida
+        searchInput.placeholder = "Escanea el código de barras...";
+        searchInput.readOnly = false;
+        searchInput.value = "";
+        searchInput.style.background = "#f8fafc";
+        searchInput.style.color = "#334155";
+        searchInput.style.cursor = "text";
+        searchInput.style.pointerEvents = "auto";
+
         if(contenedorMedida) contenedorMedida.style.display = 'none';
         if(columnaCantidad) columnaCantidad.style.flex = "1";
-        if(selectUnidad) selectUnidad.value = "Unidad"; // Por defecto Unidad para códigos
+        if(selectUnidad) selectUnidad.value = "Unidad";
 
-        inputBusqueda.focus();
+    }  else {
+        btnPeso.classList.add('active');
+        searchInput.value = "Se generará automáticamente";
+        searchInput.readOnly = true;
+        searchInput.style.background = "#f1f5f9";
+        searchInput.style.color = "#94a3b8";
+        searchInput.style.cursor = "not-allowed";
+        searchInput.style.pointerEvents = "none";
+
+        if(contenedorMedida) contenedorMedida.style.display = 'block';
+        if(columnaCantidad) columnaCantidad.style.flex = "2";
+        if(selectUnidad) selectUnidad.value = "Kg";
+
+        // Foco al nombre, no al input bloqueado
+        document.getElementById('form_nombre').focus();
     }
+    // ← elimna el searchInput.focus() que estaba aquí
+
 }
 
 // 3. SWITCH VENTA LIBRE
