@@ -107,7 +107,7 @@ function agregarAlCarrito(p) {
     const cuerpoTabla = document.getElementById('cuerpo-tabla-ventas');
     let filaExistente = document.querySelector(`tr[data-id="${p.id}"]`);
 
-    // Validación de stock al agregar
+    // Validación de stock
     if (p.stock !== undefined && p.stock !== 999999) {
         const cantidadActual = filaExistente
             ? parseInt(filaExistente.querySelector('.celda-cantidad').textContent)
@@ -234,6 +234,98 @@ function confirmarProductoPeso() {
 }
 
 // ============================================================
+// --- MODAL FIADO ---
+// ============================================================
+
+function abrirModalFiado() {
+    const total = document.getElementById('gran-total').textContent;
+    if (total === "$0") {
+        alert("El carrito está vacío. Agrega productos antes de anotar un fiado.");
+        return;
+    }
+
+    // Rellenar detalle del carrito en el modal
+    let detalleHtml = "";
+    document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
+        const nombre    = fila.cells[0].innerText.split('\n')[0].trim();
+        const cant      = fila.querySelector('.celda-cantidad').textContent.trim();
+        const totalFila = fila.querySelector('.celda-total-fila').textContent.trim();
+        detalleHtml += `
+            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #f1f5f9;">
+                <span>${nombre} × ${cant}</span>
+                <strong>${totalFila}</strong>
+            </div>
+        `;
+    });
+
+    document.getElementById('fiado-detalle').innerHTML = detalleHtml;
+    document.getElementById('fiado-total').textContent = total;
+    document.getElementById('fiado-nombre').value = '';
+    document.getElementById('modal-fiado').style.display = 'flex';
+    setTimeout(() => document.getElementById('fiado-nombre').focus(), 100);
+}
+
+function cerrarModalFiado() {
+    document.getElementById('modal-fiado').style.display = 'none';
+}
+
+async function confirmarFiado() {
+    const nombre = document.getElementById('fiado-nombre').value.trim();
+    if (!nombre) {
+        document.getElementById('fiado-nombre').style.borderColor = '#ef4444';
+        document.getElementById('fiado-nombre').focus();
+        return;
+    }
+
+    const totalTexto = document.getElementById('fiado-total').textContent;
+    const monto      = parseInt(totalTexto.replace(/[^0-9]/g, "")) || 0;
+
+    // Armamos detalle como texto para guardar en DB
+    const productos = [];
+    document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
+        const nombre_prod = fila.cells[0].innerText.split('\n')[0].trim();
+        const cant        = fila.querySelector('.celda-cantidad').textContent.trim();
+        const totalFila   = parseInt(fila.querySelector('.celda-total-fila').textContent.replace(/[^0-9]/g, "")) || 0;
+        productos.push(`${nombre_prod} x${cant} = $${totalFila.toLocaleString('es-CL')}`);
+    });
+    const detalle = productos.join(' | ');
+
+    const btn = document.querySelector('#modal-fiado button:last-child');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+    try {
+        const response = await fetch('/api/guardar_fiado', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, monto, detalle })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // Sumar al contador de fiados del turno
+            let fiadosActual = parseInt(localStorage.getItem('total_fiados') || 0);
+            localStorage.setItem('total_fiados', fiadosActual + monto);
+
+            // Limpiar carrito
+            localStorage.removeItem('carrito_actual');
+            document.getElementById('cuerpo-tabla-ventas').innerHTML = "";
+            actualizarTotalesGenerales();
+            cerrarModalFiado();
+            mostrarAlertaVenta(`✅ Fiado de ${nombre} registrado por $${monto.toLocaleString('es-CL')}`);
+        } else {
+            mostrarAlertaVenta(`❌ ${result.message}`, 'error');
+        }
+
+    } catch (error) {
+        console.error("Error al guardar fiado:", error);
+        mostrarAlertaVenta('❌ Error de conexión con el servidor', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-book"></i> Registrar Fiado'; }
+    }
+}
+
+// ============================================================
 // --- CIERRE DE CAJA ---
 // ============================================================
 
@@ -306,7 +398,6 @@ function cambiarCantidad(btn, delta, precioBase, stock) {
     let nuevaCant = parseInt(span.textContent) + delta;
     if (nuevaCant < 1) return;
 
-    // Validación de stock al usar botón +
     if (delta > 0 && stock !== undefined && stock !== 999999 && nuevaCant > stock) {
         const confirmar = confirm(
             `⚠️ Stock insuficiente\n\n` +

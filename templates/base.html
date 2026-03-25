@@ -7,38 +7,65 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
-    
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
 </head>
 <body>
 
-    <header class="top-bar">
-        <div class="top-bar-container">
-            
-            <div class="top-section left">
-                <h2 class="app-logo">🏪 EL HISTORICO</h2>
-            </div>
+    <!-- ═══════════════════════════════════════════════
+         NIVEL 1: Logo + Navegación + Usuario
+    ═══════════════════════════════════════════════ -->
+    <header class="topbar-nivel1">
+        <div class="topbar-nivel1-inner">
 
-            <div class="top-section center">
-                <nav class="top-nav">
-                    <ul class="nav-menu">
-                        <li class="{{ 'active' if request.path == '/' }}"><a href="/"><i class="fas fa-boxes"></i> Inventario</a></li>
-                        <li class="{{ 'active' if request.path == '/agregar' }}"><a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar</a></li>
-                        <li class="{{ 'active' if request.path == '/ventas' }}"><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
-                        <li class="{{ 'active' if request.path == '/reportes' }}"><a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
-                    </ul>
-                </nav>
-            </div>
+            <!-- Logo -->
+            <h2 class="app-logo">🏪 EL HISTORICO</h2>
 
-            <div class="top-section right">
-                {% block topbar_stats %}{% endblock %}
+            <!-- Navegación -->
+            <nav class="top-nav">
+                <ul class="nav-menu">
+                    <li class="{{ 'active' if request.path == '/' }}">
+                        <a href="/"><i class="fas fa-boxes"></i> Inventario</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/agregar' }}">
+                        <a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/ventas' }}">
+                        <a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/reportes' }}">
+                        <a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Usuario + Salir -->
+            <div class="topbar-usuario">
+                
+                <span class="user-name">
+                    <i class="fas fa-user-circle" style="color:#2563eb;"></i>
+                    {{ session.get('nombre', '') }}
+                    {% if session.get('rol') == 'admin' %}
+                        <span class="badge-admin">ADMIN</span>
+                    
+                </span>
+                {% endif %}
+                <a href="/logout" onclick="return confirmarLogout()" class="btn-salir">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
             </div>
 
         </div>
     </header>
 
+    <!-- ═══════════════════════════════════════════════
+         NIVEL 2: Stats de caja (solo en ventas)
+    ═══════════════════════════════════════════════ -->
+    {% block topbar_stats %}{% endblock %}
+
+    <!-- ═══════════════════════════════════════════════
+         CONTENIDO PRINCIPAL
+    ═══════════════════════════════════════════════ -->
     <main class="main-content-master">
         <div class="container-fluid-custom">
             {% block content %}{% endblock %}
@@ -46,5 +73,163 @@
     </main>
 
     {% block scripts %}{% endblock %}
+
+    <script>
+        function confirmarLogout() {
+            const total = parseInt(localStorage.getItem('venta_total_dia') || 0);
+            if (total > 0) {
+                return confirm('⚠️ Aún no has cerrado la caja.\n\n¿Estás seguro de que deseas salir sin cerrar caja?');
+            }
+            return true;
+        }
+    </script>
+    <!-- MODAL CAMBIAR CONTRASEÑA -->
+<div id="modal-password" style="display:none; position:fixed; z-index:10000;
+     left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+     align-items:center; justify-content:center;">
+
+    <div style="background:white; max-width:380px; width:92%; border-radius:16px;
+                overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+
+        <!-- Header -->
+        <div style="background:#eff6ff; padding:18px 25px; border-bottom:1px solid #bfdbfe;
+                    display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size:1.1rem; color:#1d4ed8; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-lock"></i> Cambiar Contraseña
+            </h2>
+            <span onclick="cerrarModalPassword()"
+                  style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:25px;">
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569;
+                              text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-lock" style="color:#64748b;"></i> Contraseña Actual
+                </label>
+                <input type="password" id="pwd-actual" placeholder="••••••••"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569;
+                              text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-key" style="color:#3b82f6;"></i> Nueva Contraseña
+                </label>
+                <input type="password" id="pwd-nueva" placeholder="••••••••"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+
+            <div style="margin-bottom:5px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569;
+                              text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-key" style="color:#3b82f6;"></i> Confirmar Nueva Contraseña
+                </label>
+                <input type="password" id="pwd-confirma" placeholder="••••••••"
+                       onkeydown="if(event.key==='Enter') confirmarCambioPassword()"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+
+            <p id="pwd-error" style="color:#ef4444; font-size:0.82rem; margin:8px 0 0 0; display:none;"></p>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                    display:flex; gap:12px; justify-content:flex-end;">
+            <button onclick="cerrarModalPassword()"
+                    style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                           background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                Cancelar
+            </button>
+            <button onclick="confirmarCambioPassword()"
+                    style="padding:10px 24px; border-radius:8px; border:none; background:#3b82f6;
+                           color:white; font-weight:700; cursor:pointer; font-size:1rem;
+                           display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalPassword() {
+    document.getElementById('pwd-actual').value   = '';
+    document.getElementById('pwd-nueva').value    = '';
+    document.getElementById('pwd-confirma').value = '';
+    document.getElementById('pwd-error').style.display = 'none';
+    document.getElementById('modal-password').style.display = 'flex';
+    setTimeout(() => document.getElementById('pwd-actual').focus(), 100);
+}
+
+function cerrarModalPassword() {
+    document.getElementById('modal-password').style.display = 'none';
+}
+
+async function confirmarCambioPassword() {
+    const actual    = document.getElementById('pwd-actual').value.trim();
+    const nueva     = document.getElementById('pwd-nueva').value.trim();
+    const confirma  = document.getElementById('pwd-confirma').value.trim();
+    const errorEl   = document.getElementById('pwd-error');
+
+    if (!actual || !nueva || !confirma) {
+        errorEl.textContent = 'Todos los campos son obligatorios.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (nueva !== confirma) {
+        errorEl.textContent = 'Las contraseñas nuevas no coinciden.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (nueva.length < 4) {
+        errorEl.textContent = 'La contraseña debe tener al menos 4 caracteres.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    errorEl.style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/cambiar_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                password_actual:   actual,
+                password_nueva:    nueva,
+                password_confirma: confirma
+            })
+        });
+
+        const result = await resp.json();
+
+        if (result.status === 'success') {
+            cerrarModalPassword();
+            // Alerta de éxito
+            const alerta = document.createElement('div');
+            alerta.className = 'alert-floating alert-green';
+            alerta.innerHTML = '<i class="fas fa-check-circle"></i> Contraseña actualizada correctamente';
+            document.body.appendChild(alerta);
+            setTimeout(() => {
+                alerta.style.opacity = '0';
+                setTimeout(() => alerta.remove(), 500);
+            }, 3000);
+        } else {
+            errorEl.textContent = result.message;
+            errorEl.style.display = 'block';
+        }
+
+    } catch(e) {
+        errorEl.textContent = 'Error de conexión con el servidor.';
+        errorEl.style.display = 'block';
+    }
+}
+</script>
 </body>
 </html>

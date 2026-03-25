@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reportes.css') }}">
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="reportes-wrapper">
-    
+
     <div class="reportes-header">
         <div class="header-text">
             <h1>Panel de Control</h1>
@@ -14,73 +14,334 @@
         </div>
     </div>
 
-    <div class="reportes-grid">
-        <div class="card-metrica card-ingresos" onclick="mostrarDetalle('diario')" style="cursor:pointer;">
-            <div class="card-icon"><i class="fas fa-cash-register"></i></div>
+    <!-- TARJETAS EN UNA FILA -->
+    <div class="reportes-grid-compacto">
+
+        <div class="card-metrica card-ingresos" onclick="mostrarSeccion('diario')" id="tab-diario" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-cash-register" style="color:white;"></i></div>
             <div class="card-content">
-                <span class="label">Informes diarios</span>
+                <span class="label">Ventas Diarias</span>
                 <h2 id="rep-ingresos">$0</h2>
-                <span class="trend">Historial de cierres</span>
+                <span class="trend">Turno actual</span>
             </div>
         </div>
 
-        <div class="card-metrica card-fiados" onclick="mostrarDetalle('diario')" style="cursor:pointer;">
-            <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+        <div class="card-metrica card-fiados" onclick="mostrarSeccion('fiados')" id="tab-fiados" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-user-clock" style="color:white;"></i></div>
             <div class="card-content">
-                <span class="label">Fiados por Cobrar</span>
+                <span class="label">Fiados</span>
                 <h2 id="rep-fiados">$0</h2>
-                <span class="trend">Total acumulado</span>
+                <span class="trend">Pendiente de cobro</span>
             </div>
         </div>
 
-        <div class="card-metrica card-muertos" onclick="mostrarDetalle('muertos')" style="cursor:pointer;">
-            <div class="card-icon"><i class="fas fa-ghost"></i></div>
+        <div class="card-metrica card-facturas" onclick="mostrarSeccion('facturas')" id="tab-facturas" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-file-invoice" style="color:white;"></i></div>
             <div class="card-content">
-                <span class="label">Productos Muertos</span>
+                <span class="label">Facturas</span>
+                <h2 id="rep-facturas">0</h2>
+                <span class="trend">Pendientes de pago</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-muertos" onclick="mostrarSeccion('muertos')" id="tab-muertos" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-ghost" style="color:white;"></i></div>
+            <div class="card-content">
+                <span class="label">Prod. Muertos</span>
                 <h2 id="rep-muertos">0</h2>
-                <span class="trend">Sin venta > 30 días</span>
+                <span class="trend">Sin venta > 60 días</span>
             </div>
         </div>
 
-        <div class="card-metrica card-vencer" onclick="mostrarDetalle('vencer')" style="cursor:pointer;">
-            <div class="card-icon"><i class="fas fa-calendar-times"></i></div>
-            <div class="card-content">
-                <span class="label">Próximos a Vencer</span>
-                <h2 id="rep-vencer">0</h2>
-                <span class="trend">Revisar caducidad</span>
-            </div>
-        </div>
-
-        <div class="card-metrica card-config" onclick="location.href='/configuracion'" style="cursor:pointer;">
-            <div class="card-icon"><i class="fas fa-cog"></i></div>
+        <div class="card-metrica card-config" onclick="mostrarSeccion('config')" id="tab-config" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-cog" style="color:white;"></i></div>
             <div class="card-content">
                 <span class="label">Configuración</span>
-                <h2>Ajustes</h2>
-                <span class="trend">Sistema</span>
+                <h2 style="font-size:1.1rem;">Ajustes</h2>
+                <span class="trend">Sistema y usuarios</span>
             </div>
         </div>
+
     </div>
 
+    <!-- PANEL CONTENIDO -->
     <div class="reportes-detalle">
         <div class="tabla-container">
-            
-            <div class="detalle-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+
+            <div class="detalle-header" style="display:flex; justify-content:space-between;
+                         align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                 <h3 id="titulo-detalle">Selecciona una tarjeta para ver detalle</h3>
-                
-                <div id="contenedor-filtro" style="display: flex; align-items: center; gap: 10px;">
-                    <label for="fecha-busqueda" style="font-size: 0.9rem; color: #64748b;">Ver fecha:</label>
+
+                <!-- Filtro fecha -->
+                <div id="filtro-fecha" style="display:none; align-items:center; gap:10px;">
+                    <label style="font-size:0.9rem; color:#64748b;">Ver fecha:</label>
                     <input type="date" id="fecha-busqueda" class="input-fecha">
                 </div>
+
+                <!-- Filtro fiados -->
+                <div id="filtro-fiados" style="display:none; align-items:center; gap:10px;">
+                    <label style="font-size:0.9rem; color:#64748b;">Mostrar:</label>
+                    <select id="filtro-estado-fiados" class="input-fecha"
+                            onchange="cargarFiados()"
+                            style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;
+                                   color:#475569; font-weight:600; outline:none;">
+                        <option value="pendientes">Pendientes y parciales</option>
+                        <option value="todos">Todos</option>
+                        <option value="pagados">Solo pagados</option>
+                    </select>
+                </div>
+
+                <!-- Filtro facturas -->
+                <div id="filtro-facturas" style="display:none; align-items:center; gap:10px;">
+                    <select id="filtro-estado-facturas" class="input-fecha"
+                            onchange="cargarFacturas()"
+                            style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;
+                                   color:#475569; font-weight:600; outline:none;">
+                        <option value="pendientes">Pendientes</option>
+                        <option value="todas">Todas</option>
+                        <option value="pagadas">Pagadas</option>
+                    </select>
+                    <button onclick="abrirModalFactura()"
+                            style="background:#3b82f6; color:white; border:none; padding:8px 16px;
+                                   border-radius:8px; cursor:pointer; font-weight:600; font-size:0.85rem;
+                                   display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-plus"></i> Nueva Factura
+                    </button>
+                </div>
+
+                <!-- Filtro muertos -->
+                <div id="filtro-muertos" style="display:none; align-items:center; gap:10px;">
+                    <label style="font-size:0.9rem; color:#64748b;">Sin venta hace más de:</label>
+                    <select id="filtro-dias-muertos" class="input-fecha"
+                            onchange="cargarProductosMuertos()"
+                            style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;
+                                   color:#475569; font-weight:600; outline:none;">
+                        <option value="30">30 días</option>
+                        <option value="60" selected>60 días</option>
+                        <option value="90">90 días</option>
+                    </select>
+                </div>
+
             </div>
 
-            <table class="tabla-reporte">
-                <thead>
-                    <tr id="tabla-header">
-                        </tr>
-                </thead>
-                <tbody id="tabla-body">
-                    </tbody>
+            <!-- Tabla -->
+            <table class="tabla-reporte" id="tabla-principal" style="display:none;">
+                <thead><tr id="tabla-header"></tr></thead>
+                <tbody id="tabla-body"></tbody>
             </table>
+
+            <!-- Panel config -->
+            <div id="panel-config" style="display:none;"></div>
+
+            <!-- Estado vacío -->
+            <div id="panel-vacio" style="text-align:center; padding:60px 20px; color:#94a3b8;">
+                <i class="fas fa-hand-point-up" style="font-size:2.5rem; margin-bottom:15px; display:block;"></i>
+                <p style="font-size:1rem;">Selecciona una tarjeta para ver el detalle</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SALDAR FIADO -->
+<div id="modal-saldar" style="display:none; position:fixed; z-index:10000;
+     left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+     align-items:center; justify-content:center;">
+    <div style="background:white; max-width:400px; width:92%; border-radius:16px;
+                overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+        <div style="background:#fffbeb; padding:18px 25px; border-bottom:1px solid #fde68a;
+                    display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size:1.1rem; color:#92400e; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-hand-holding-usd"></i> Registrar Pago
+            </h2>
+            <span onclick="cerrarModalSaldar()" style="cursor:pointer; font-size:1.5rem; color:#94a3b8;">&times;</span>
+        </div>
+        <div style="padding:25px;">
+            <input type="hidden" id="saldar-id">
+            <div style="background:#f8fafc; border-radius:12px; padding:15px; margin-bottom:20px; text-align:center;">
+                <p style="color:#64748b; font-size:0.75rem; margin:0 0 4px 0; text-transform:uppercase;">Cliente</p>
+                <strong id="saldar-nombre" style="font-size:1.1rem; color:#1e293b; display:block;"></strong>
+                <p style="color:#f59e0b; font-weight:700; margin:6px 0 0 0; font-size:0.9rem;">
+                    Saldo: <span id="saldar-saldo">$0</span>
+                </p>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-weight:700; color:#475569; display:flex; align-items:center;
+                              gap:8px; margin-bottom:10px; font-size:0.85rem; text-transform:uppercase;">
+                    <i class="fas fa-dollar-sign" style="color:#f59e0b;"></i> Monto a cancelar
+                </label>
+                <div style="display:flex; align-items:center; border:2px solid #e2e8f0;
+                            border-radius:12px; overflow:hidden;" id="saldar-wrapper">
+                    <span style="padding:0 15px; font-size:1.3rem; color:#94a3b8;
+                                 border-right:2px solid #e2e8f0; background:#f8fafc;">$</span>
+                    <input type="number" id="saldar-monto" placeholder="0" step="1" min="1"
+                           onfocus="document.getElementById('saldar-wrapper').style.borderColor='#f59e0b'"
+                           onblur="document.getElementById('saldar-wrapper').style.borderColor='#e2e8f0'"
+                           style="width:100%; padding:14px; font-size:1.4rem; font-weight:700;
+                                  border:none; outline:none; color:#1e293b; text-align:center;">
+                </div>
+            </div>
+        </div>
+        <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                    display:flex; gap:12px; justify-content:flex-end;">
+            <button onclick="cerrarModalSaldar()"
+                    style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                           background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">Cancelar</button>
+            <button onclick="confirmarSaldar()"
+                    style="padding:10px 24px; border-radius:8px; border:none; background:#f59e0b;
+                           color:white; font-weight:700; cursor:pointer; font-size:1rem;">
+                <i class="fas fa-check"></i> Confirmar Pago
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NUEVA FACTURA -->
+<div id="modal-factura" style="display:none; position:fixed; z-index:10000;
+     left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+     align-items:center; justify-content:center;">
+    <div style="background:white; max-width:500px; width:92%; border-radius:16px;
+                overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;
+                max-height:92vh; overflow-y:auto;">
+        <div style="background:#eff6ff; padding:18px 25px; border-bottom:1px solid #bfdbfe;
+                    display:flex; justify-content:space-between; align-items:center;
+                    position:sticky; top:0; z-index:1;">
+            <h2 style="font-size:1.1rem; color:#1d4ed8; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-file-invoice"></i> Nueva Factura
+            </h2>
+            <span onclick="cerrarModalFactura()" style="cursor:pointer; font-size:1.5rem; color:#94a3b8;">&times;</span>
+        </div>
+        <div style="padding:25px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                        <i class="fas fa-hashtag" style="color:#3b82f6;"></i> N° Factura
+                    </label>
+                    <input type="text" id="fac-numero" placeholder="Ej: 001234"
+                           style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                                  font-size:0.95rem; outline:none; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                        <i class="fas fa-calendar" style="color:#3b82f6;"></i> Fecha
+                    </label>
+                    <input type="date" id="fac-fecha"
+                           style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                                  font-size:0.95rem; outline:none; box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-store" style="color:#3b82f6;"></i> Proveedor
+                </label>
+                <input type="text" id="fac-proveedor" placeholder="Nombre del proveedor"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-id-card" style="color:#3b82f6;"></i> RUT Proveedor
+                </label>
+                <input type="text" id="fac-rut" placeholder="Ej: 12.345.678-9"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-dollar-sign" style="color:#10b981;"></i> Monto Total ($)
+                </label>
+                <input type="number" id="fac-monto" placeholder="0" step="1" min="0"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-box" style="color:#8b5cf6;"></i> Productos comprados
+                </label>
+                <textarea id="fac-productos" placeholder="Ej: 10x Leche, 5x Pan..." rows="3"
+                          style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                                 font-size:0.95rem; outline:none; resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>
+            </div>
+            <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    <i class="fas fa-flag" style="color:#f59e0b;"></i> Estado
+                </label>
+                <select id="fac-estado"
+                        style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                               font-size:0.95rem; outline:none; background:#f8fafc; box-sizing:border-box;">
+                    <option value="pendiente">Pendiente de pago</option>
+                    <option value="pagada">Pagada</option>
+                </select>
+            </div>
+        </div>
+        <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                    display:flex; gap:12px; justify-content:flex-end; position:sticky; bottom:0;">
+            <button onclick="cerrarModalFactura()"
+                    style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                           background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">Cancelar</button>
+            <button onclick="guardarFactura()"
+                    style="padding:10px 24px; border-radius:8px; border:none; background:#3b82f6;
+                           color:white; font-weight:700; cursor:pointer; font-size:1rem;
+                           display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-save"></i> Guardar Factura
+            </button>
+        </div>
+    </div>
+</div>
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div id="modal-password" style="display:none; position:fixed; z-index:10000;
+     left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+     align-items:center; justify-content:center;">
+    <div style="background:white; max-width:380px; width:92%; border-radius:16px;
+                overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+        <div style="background:#eff6ff; padding:18px 25px; border-bottom:1px solid #bfdbfe;
+                    display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size:1.1rem; color:#1d4ed8; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-lock"></i> Cambiar Contraseña
+            </h2>
+            <span onclick="cerrarModalPassword()"
+                  style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
+        </div>
+        <div style="padding:25px;">
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    Contraseña Actual
+                </label>
+                <input type="password" id="pwd-actual" placeholder="••••••••"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    Nueva Contraseña
+                </label>
+                <input type="password" id="pwd-nueva" placeholder="••••••••"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:5px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:6px;">
+                    Confirmar Nueva Contraseña
+                </label>
+                <input type="password" id="pwd-confirma" placeholder="••••••••"
+                       onkeydown="if(event.key==='Enter') confirmarCambioPassword()"
+                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
+                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            </div>
+            <p id="pwd-error" style="color:#ef4444; font-size:0.82rem; margin:8px 0 0 0; display:none;"></p>
+        </div>
+        <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
+                    display:flex; gap:12px; justify-content:flex-end;">
+            <button onclick="cerrarModalPassword()"
+                    style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
+                           background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                Cancelar
+            </button>
+            <button onclick="confirmarCambioPassword()"
+                    style="padding:10px 24px; border-radius:8px; border:none; background:#3b82f6;
+                           color:white; font-weight:700; cursor:pointer; font-size:1rem;">
+                <i class="fas fa-save"></i> Guardar
+            </button>
         </div>
     </div>
 </div>

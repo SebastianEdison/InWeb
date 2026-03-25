@@ -1,4 +1,10 @@
 import sqlite3
+import hashlib
+import pytz
+from datetime import datetime
+
+tz_chile = pytz.timezone('America/Santiago')
+fecha_chile = datetime.now(tz_chile).strftime('%Y-%m-%d %H:%M:%S')
 
 def conectar():
     conexion =sqlite3.connect("inventario.db")
@@ -29,7 +35,7 @@ def crear_tablas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS ventas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    fecha DATETIME DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', '-3 hours')),
                     total REAL NOT NULL,
                     metodo_pago TEXT
                     );   
@@ -54,10 +60,11 @@ def crear_tablas():
                 producto_id INTEGER,
                 tipo TEXT,
                 cantidad INTEGER,
-                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                fecha DATETIME DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', '-3 hours')),
                 FOREIGN KEY (producto_id) REFERENCES productos(id)
                 );
     """)
+    
     # NUEVA TABLA DE CIERRES
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS cierres (
@@ -71,6 +78,70 @@ def crear_tablas():
             turno TEXT
         )
     ''')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        rol TEXT DEFAULT 'empleado',
+        activo INTEGER DEFAULT 1
+    )
+    ''')
+    # Usuario admin por defecto (solo si no existe)
+    cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
+    if not cursor.fetchone():
+            import hashlib
+            password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
+            cursor.execute("""
+            INSERT INTO usuarios (username, password, nombre, rol)
+                VALUES ('admin', ?, 'Administrador', 'admin')
+            """, (password_hash,))
+            print("✅ Usuario admin creado: admin / admin123")
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS fiados (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre_cliente TEXT NOT NULL,
+        monto_total REAL NOT NULL,
+        monto_pagado REAL DEFAULT 0,
+        fecha TEXT NOT NULL,
+        estado TEXT DEFAULT 'pendiente',
+        detalle TEXT
+    )
+    ''')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS facturas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        numero_factura TEXT NOT NULL,
+        proveedor TEXT NOT NULL,
+        rut_proveedor TEXT,
+        fecha TEXT NOT NULL,
+        monto_total REAL NOT NULL,
+        productos TEXT,
+        estado TEXT DEFAULT 'pendiente'
+    )
+''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS configuracion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            clave TEXT UNIQUE NOT NULL,
+            valor TEXT
+        )
+    ''')
+
+    # Configuración por defecto
+    configs = [
+        ('nombre_negocio', 'EL HISTORICO'),
+        ('rut_negocio', ''),
+        ('aplica_iva', '1'),
+    ]
+    for clave, valor in configs:
+        cursor.execute("""
+            INSERT OR IGNORE INTO configuracion (clave, valor) 
+            VALUES (?, ?)
+        """, (clave, valor))
 
     conexion.commit()
     conexion.close()
@@ -228,8 +299,10 @@ def registrar_venta(carrito, metodo_pago="Efectivo"):
         total_venta = sum(item['cantidad'] * item['precio'] for item in carrito)
 
         # 3. INSERTAR CABECERA (Ventas)
-        cursor.execute("INSERT INTO ventas (total, metodo_pago) VALUES (?, ?)", 
-                       (total_venta, metodo_pago))
+        tz_chile = pytz.timezone('America/Santiago')
+        fecha_chile = datetime.now(tz_chile).strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute("INSERT INTO ventas (total, metodo_pago, fecha) VALUES (?, ?, ?)", 
+                (total_venta, metodo_pago, fecha_chile))
         venta_id = cursor.lastrowid 
 
         # 4. PROCESAR PRODUCTOS
@@ -271,7 +344,7 @@ def probar_sistema():
     print("--- INICIANDO PRUEBAS DEL SISTEMA ---")
     crear_tablas()
 
-    # 1. Agregar productos (solo si no existen)
+    #Se agregan productos que no existen
     print("\n[1] Preparando productos...")
     agregar_producto('780001', 'Leche entera 1L', 1500, 1000, 50)
     agregar_producto('780002', 'Pan de molde', 2200, 1500, 20)
@@ -281,11 +354,11 @@ def probar_sistema():
     prod2 = buscar_producto_por_codigo('780002')
 
     if prod and prod2:
-        # 3. Probar la nueva función de MODIFICAR STOCK (Reposición)
+        # probamos la funcion de modificar stock
         print(f"\n[2] Reponiendo 10 unidades de {prod[2]}...")
         modificar_stock(prod[0], 10) # Suma 10
 
-        # 4. Probar la REGISTRAR VENTA (Carrito)
+        # Probar REGISTRAR VENTA (Carrito)
         print("\n[3] Simulando una venta de carrito...")
         mi_carrito = [
             {'id': prod[0], 'cantidad': 2, 'precio': prod[3]},  # 2 Leches
@@ -303,15 +376,15 @@ def probar_sistema():
 
     print("\n --- PRUEBAS FINALIZADAS ---")
 
-def actualizar_producto(id_p, nombre, precio, costo, stock):
+def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad'):
     conexion = conectar()
     cursor = conexion.cursor()
     try:
         cursor.execute("""
             UPDATE productos 
-            SET nombre = ?, precio_venta = ?, costo = ?, stock = ?
+            SET nombre = ?, precio_venta = ?, costo = ?, stock = ?, unidad = ?
             WHERE id = ?
-        """, (nombre, precio, costo, stock, id_p))
+        """, (nombre, precio, costo, stock, unidad, id_p))
         conexion.commit()
         return True
     except sqlite3.Error as e:
@@ -321,18 +394,15 @@ def actualizar_producto(id_p, nombre, precio, costo, stock):
         conexion.close()
 
 def eliminar_producto(id_recibido):
-    # Usa TU función de conexión (ejemplo: conectar_db o get_db)
+    # Usar función de conexión (ejemplo: conectar_db o get_db)
     conexion = conectar() 
     cursor = conexion.cursor()
     
-    # IMPORTANTE: Usa el nombre de tu tabla y de tu columna ID
-    # Si tu tabla se llama 'mercaderia', cámbialo aquí
     cursor.execute("DELETE FROM productos WHERE id = ?", (id_recibido,))
     
     conexion.commit()
     conexion.close()
 
-# Añade estas funciones al final del archivo para manejar los datos
 def guardar_cierre_db(datos):
     conn = conectar()
     cursor = conn.cursor()
@@ -355,3 +425,377 @@ def obtener_historial_db():
     resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
     conn.close()
     return resultados
+
+def guardar_fiado_db(nombre, monto, detalle):
+    from datetime import datetime
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO fiados (nombre_cliente, monto_total, monto_pagado, fecha, estado, detalle)
+        VALUES (?, ?, 0, ?, 'pendiente', ?)
+    ''', (nombre, monto, datetime.now().strftime('%d-%m-%Y %H:%M'), detalle))
+    conn.commit()
+    conn.close()
+
+def obtener_fiados_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM fiados ORDER BY id DESC")
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+def saldar_fiado_db(fiado_id, monto_pago):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT monto_total, monto_pagado FROM fiados WHERE id = ?", (fiado_id,))
+    fiado = cursor.fetchone()
+    if not fiado:
+        conn.close()
+        return False, "Fiado no encontrado"
+    
+    nuevo_pagado = fiado['monto_pagado'] + monto_pago
+    estado = 'pagado' if nuevo_pagado >= fiado['monto_total'] else 'parcial'
+    
+    cursor.execute("""
+        UPDATE fiados SET monto_pagado = ?, estado = ? WHERE id = ?
+    """, (nuevo_pagado, estado, fiado_id))
+    conn.commit()
+    conn.close()
+    return True, estado
+
+def verificar_usuario(username, password):
+    import hashlib
+    conn = conectar()
+    cursor = conn.cursor()
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    cursor.execute("""
+        SELECT id, username, nombre, rol 
+        FROM usuarios 
+        WHERE username = ? AND password = ? AND activo = 1
+    """, (username, password_hash))
+    usuario = cursor.fetchone()
+    conn.close()
+    if usuario:
+        return dict(usuario)
+    return None
+
+def crear_usuario(username, password, nombre, rol='empleado'):
+    import hashlib
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        cursor.execute("""
+            INSERT INTO usuarios (username, password, nombre, rol)
+            VALUES (?, ?, ?, ?)
+        """, (username, password_hash, nombre, rol))
+        conn.commit()
+        return True, "Usuario creado"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
+def obtener_usuarios():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, nombre, rol, activo FROM usuarios ORDER BY id")
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+# ── FACTURAS ──
+def guardar_factura_db(datos):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO facturas (numero_factura, proveedor, rut_proveedor, fecha, monto_total, productos, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (datos['numero_factura'], datos['proveedor'], datos['rut_proveedor'],
+          datos['fecha'], datos['monto_total'], datos['productos'], datos['estado']))
+    conn.commit()
+    conn.close()
+
+def obtener_facturas_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM facturas ORDER BY id DESC')
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+def actualizar_estado_factura_db(factura_id, estado):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE facturas SET estado = ? WHERE id = ?", (estado, factura_id))
+    conn.commit()
+    conn.close()
+
+# ── PRODUCTOS MUERTOS ──
+def obtener_productos_muertos_db(dias=60):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT p.id, p.nombre, p.codigo_barra, p.stock,
+               MAX(m.fecha) as ultima_venta
+        FROM productos p
+        LEFT JOIN movimientos_stock m 
+            ON p.id = m.producto_id AND m.tipo = 'VENTA'
+        WHERE p.activo = 1 AND p.stock > 0
+        GROUP BY p.id
+        HAVING ultima_venta IS NULL 
+            OR ultima_venta < datetime('now', '-{dias} days')
+        ORDER BY ultima_venta ASC
+    """)
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+# ── CONFIGURACIÓN ──
+def obtener_config_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute('SELECT clave, valor FROM configuracion')
+    config = {row[0]: row[1] for row in cursor.fetchall()}
+    conn.close()
+    return config
+
+def guardar_config_db(datos):
+    conn = conectar()
+    cursor = conn.cursor()
+    for clave, valor in datos.items():
+        cursor.execute("""
+            INSERT OR REPLACE INTO configuracion (clave, valor) 
+            VALUES (?, ?)
+        """, (clave, valor))
+    conn.commit()
+    conn.close()
+
+def cambiar_password_db(usuario_id, password_actual, password_nueva):
+    import hashlib
+    conn = conectar()
+    cursor = conn.cursor()
+    
+    # Verificar contraseña actual
+    hash_actual = hashlib.sha256(password_actual.encode()).hexdigest()
+    cursor.execute("SELECT id FROM usuarios WHERE id = ? AND password = ?", 
+                   (usuario_id, hash_actual))
+    
+    if not cursor.fetchone():
+        conn.close()
+        return False, "Contraseña actual incorrecta"
+    
+    # Actualizar contraseña
+    hash_nueva = hashlib.sha256(password_nueva.encode()).hexdigest()
+    cursor.execute("UPDATE usuarios SET password = ? WHERE id = ?", 
+                   (hash_nueva, usuario_id))
+    conn.commit()
+    conn.close()
+    return True, "Contraseña actualizada"    
+
+def generar_reporte_excel(datos_cierre):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    import os
+    from datetime import datetime
+
+    # Crear carpeta reportes si no existe
+    carpeta = os.path.join(os.path.dirname(__file__), 'reportes')
+    os.makedirs(carpeta, exist_ok=True)
+
+    # Nombre del archivo con fecha y hora
+    fecha_archivo = datetime.now().strftime('%Y-%m-%d_%H-%M')
+    ruta = os.path.join(carpeta, f'cierre_{fecha_archivo}.xlsx')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Cierre de Caja"
+
+    # Estilos
+    estilo_titulo  = Font(bold=True, size=14)
+    estilo_header  = Font(bold=True, color="FFFFFF")
+    fill_header    = PatternFill("solid", fgColor="1E293B")
+    fill_total     = PatternFill("solid", fgColor="DCFCE7")
+    centro         = Alignment(horizontal="center")
+
+    # ── ENCABEZADO ──
+    ws.merge_cells('A1:D1')
+    ws['A1'] = datos_cierre.get('nombre_negocio', 'EL HISTORICO')
+    ws['A1'].font      = estilo_titulo
+    ws['A1'].alignment = centro
+
+    ws.merge_cells('A2:D2')
+    ws['A2'] = f"Cierre de Caja — {datos_cierre['fecha']}"
+    ws['A2'].alignment = centro
+
+    ws.append([])  # fila vacía
+
+    # ── RESUMEN DEL TURNO ──
+    headers = ['Concepto', 'Monto']
+    ws.append(headers)
+    for cell in ws[ws.max_row]:
+        cell.font      = estilo_header
+        cell.fill      = fill_header
+        cell.alignment = centro
+
+    filas_resumen = [
+        ('Efectivo',  datos_cierre.get('efectivo', 0)),
+        ('Tarjeta',   datos_cierre.get('tarjeta', 0)),
+        ('Otros',     datos_cierre.get('otros', 0)),
+        ('Fiados',    datos_cierre.get('fiados', 0)),
+        ('TOTAL CAJA',datos_cierre.get('total', 0)),
+    ]
+
+    for i, (concepto, monto) in enumerate(filas_resumen):
+        ws.append([concepto, f'${monto:,.0f}'])
+        if concepto == 'TOTAL CAJA':
+            for cell in ws[ws.max_row]:
+                cell.font = Font(bold=True)
+                cell.fill = fill_total
+
+    ws.append([])  # fila vacía
+
+    # ── DETALLE DE VENTAS DEL DÍA ──
+    ws.append(['DETALLE DE VENTAS'])
+    ws[ws.max_row][0].font = Font(bold=True, size=12)
+
+    headers_ventas = ['N° Venta', 'Hora', 'Método Pago', 'Total']
+    ws.append(headers_ventas)
+    for cell in ws[ws.max_row]:
+        cell.font      = estilo_header
+        cell.fill      = fill_header
+        cell.alignment = centro
+
+    # Traer ventas del día desde la DB
+    conn = conectar()
+    cursor = conn.cursor()
+    from datetime import datetime as dt
+    hoy = dt.now().strftime('%Y-%m-%d')
+    cursor.execute("""
+        SELECT id, fecha, metodo_pago, total 
+        FROM ventas 
+        WHERE DATE(fecha) = ?
+        ORDER BY fecha DESC
+    """, (hoy,))
+    ventas = cursor.fetchall()
+    conn.close()
+
+    for venta in ventas:
+        hora = venta['fecha'].split(' ')[1][:5] if venta['fecha'] else '--:--'
+        ws.append([
+            f'#{venta["id"]}',
+            hora,
+            venta['metodo_pago'],
+            f'${venta["total"]:,.0f}'
+        ])
+
+    # ── AJUSTAR ANCHOS ──
+    ws.column_dimensions['A'].width = 20
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 15
+
+    wb.save(ruta)
+    print(f"✅ Reporte guardado en: {ruta}")
+
+def generar_excel_dia(fecha):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    import os
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Ventas del Dia"
+
+    estilo_header = Font(bold=True, color="FFFFFF")
+    fill_header   = PatternFill("solid", fgColor="1E293B")
+    fill_total    = PatternFill("solid", fgColor="DCFCE7")
+    centro        = Alignment(horizontal="center")
+
+    # Encabezado
+    ws.merge_cells('A1:E1')
+    ws['A1'] = f"Reporte de Ventas — {fecha}"
+    ws['A1'].font      = Font(bold=True, size=13)
+    ws['A1'].alignment = centro
+    ws.append([])
+
+    # Headers tabla
+    ws.append(['N° Venta', 'Hora', 'Producto', 'Cantidad', 'Subtotal', 'Método Pago', 'Total Venta'])
+    for cell in ws[ws.max_row]:
+        cell.font      = estilo_header
+        cell.fill      = fill_header
+        cell.alignment = centro
+
+    # Traer ventas del día con detalle
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT v.id, v.fecha, v.total, v.metodo_pago,
+               p.nombre, dv.cantidad, dv.subtotal
+        FROM ventas v
+        JOIN detalle_venta dv ON dv.venta_id = v.id
+        JOIN productos p ON p.id = dv.producto_id
+        WHERE DATE(v.fecha) = ?
+        ORDER BY v.fecha DESC
+    """, (fecha,))
+    filas = cursor.fetchall()
+
+    # Totales por método
+    cursor.execute("""
+        SELECT metodo_pago, SUM(total) as total
+        FROM ventas
+        WHERE DATE(fecha) = ?
+        GROUP BY metodo_pago
+    """, (fecha,))
+    totales = cursor.fetchall()
+    conn.close()
+
+    total_dia = 0
+    for fila in filas:
+        hora = fila['fecha'].split(' ')[1][:5] if fila['fecha'] else '--:--'
+        ws.append([
+            f'#{fila["id"]}',
+            hora,
+            fila['nombre'],
+            fila['cantidad'],
+            f'${fila["subtotal"]:,.0f}',
+            fila['metodo_pago'],
+            f'${fila["total"]:,.0f}'
+        ])
+
+    ws.append([])
+
+    # Resumen
+    ws.append(['RESUMEN DEL DÍA'])
+    ws[ws.max_row][0].font = Font(bold=True, size=11)
+
+    for t in totales:
+        total_dia += t['total']
+        ws.append([t['metodo_pago'].capitalize(), f'${t["total"]:,.0f}'])
+
+    ws.append(['TOTAL', f'${total_dia:,.0f}'])
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+        cell.fill = fill_total
+
+    # Anchos
+    ws.column_dimensions['A'].width = 12
+    ws.column_dimensions['B'].width = 8
+    ws.column_dimensions['C'].width = 25
+    ws.column_dimensions['D'].width = 10
+    ws.column_dimensions['E'].width = 12
+    ws.column_dimensions['F'].width = 14
+    ws.column_dimensions['G'].width = 14
+
+    # Guardar en memoria para descargar
+    from io import BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+

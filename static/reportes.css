@@ -233,3 +233,60 @@
 .btn-accion-tabla:hover i {
     color: #3b82f6 !important;
 }
+
+/* ── GRID COMPACTO (una fila) ── */
+.reportes-grid-compacto {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.reportes-grid-compacto .card-metrica {
+    padding: 14px;
+    gap: 10px;
+}
+
+.reportes-grid-compacto .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.reportes-grid-compacto .card-content h2 {
+    font-size: 1.2rem;
+    margin: 3px 0;
+}
+
+.reportes-grid-compacto .card-content .label {
+    font-size: 0.75rem;
+}
+
+.reportes-grid-compacto .card-content .trend {
+    font-size: 0.7rem;
+}
+
+/* Tarjeta activa */
+.card-activa {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+    border: 2px solid currentColor;
+}
+
+.card-facturas .card-icon { background: #3b82f6; }
+.card-facturas .trend     { color: #1d4ed8; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .reportes-grid-compacto {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .reportes-grid-compacto {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

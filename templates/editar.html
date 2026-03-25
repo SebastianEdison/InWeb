@@ -1,44 +1,89 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Producto</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>✏️ Editar Producto</h1>
-        
-        <div class="form-card">
-            <form action="/actualizar" method="POST" class="edit-form">
-                <input type="hidden" name="id" value="{{ p['id'] }}">
+{% extends "base.html" %}
 
-                <div class="input-group">
-                    <label>Nombre del Producto:</label>
-                    <input type="text" name="nombre" value="{{ p['nombre'] }}" required>
-                </div>
+{% block title %}Editar Producto - EL HISTORICO{% endblock %}
 
-                <div class="input-group">
-                    <label>Precio de Venta ($):</label>
-                    <input type="number" name="precio" value="{{ p['precio_venta'] | int }}" required>
-                </div>
+{% block content %}
+<div style="max-width: 600px; margin: 30px auto; padding: 0 20px;">
 
-                <div class="input-group">
-                    <label>Costo ($):</label>
-                    <input type="number" name="costo" value="{{ p['costo'] | int }}" required>
-                </div>
-
-                <div class="input-group">
-                    <label>Stock Actual:</label>
-                    <input type="number" name="stock" value="{{ p['stock'] }}" required>
-                </div>
-
-                <div class="button-group">
-                    <button type="submit" class="btn-save">Guardar Cambios</button>
-                    <a href="/" class="btn-clear" style="text-decoration: none; display: inline-block; text-align: center;">Cancelar</a>
-                </div>
-            </form>
-        </div>
+    <div style="margin-bottom: 25px;">
+        <h1 style="font-size: 1.6rem; color: #1e293b; font-weight: 800; margin:0 0 6px 0;">
+            ✏️ Editar Producto
+        </h1>
+        <p style="color: #64748b; margin:0;">Modifica los datos del producto y guarda los cambios.</p>
     </div>
-</body>
-</html>
+
+    <div style="background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+        <form action="/actualizar" method="POST">
+            <input type="hidden" name="id" value="{{ p['id'] }}">
+
+            <!-- Nombre -->
+            <div class="form-group">
+                <label class="lbl-blue">
+                    <i class="fas fa-tag"></i> Nombre del Producto
+                </label>
+                <input type="text" name="nombre" value="{{ p['nombre'] }}" required
+                       placeholder="Ej: Leche entera 1L">
+            </div>
+
+            <!-- Precios -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-green">
+                        <i class="fas fa-arrow-down"></i> Precio Costo ($)
+                    </label>
+                    <input type="number" name="costo" 
+                           value="{{ p['costo'] | int }}" required
+                           placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-orange">
+                        <i class="fas fa-arrow-up"></i> Precio Venta ($)
+                    </label>
+                    <input type="number" name="precio" 
+                           value="{{ p['precio_venta'] | int }}" required
+                           placeholder="0">
+                </div>
+            </div>
+
+            <!-- Stock y Unidad -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-purple">
+                        <i class="fas fa-boxes"></i> Stock Actual
+                    </label>
+                    <input type="number" name="stock" 
+                           value="{{ p['stock'] }}" required
+                           placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-weight"></i> Unidad de Venta
+                    </label>
+                    <select name="unidad"
+                            style="width:100%; padding:14px; border:2px solid #edf2f7;
+                                   border-radius:12px; font-size:1rem; background:#f8fafc;
+                                   color:#1e293b; outline:none; transition: all 0.2s ease;
+                                   cursor:pointer;"
+                            onfocus="this.style.borderColor='#3b82f6'"
+                            onblur="this.style.borderColor='#edf2f7'">
+                        <option value="Unidad" {{ 'selected' if p['unidad'] == 'Unidad' }}>Unidad</option>
+                        <option value="Kg"     {{ 'selected' if p['unidad'] == 'Kg' }}>Kilogramo (Kg)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div style="display:flex; gap:12px; margin-top:10px;">
+                <button type="submit" class="btn-save-modern" style="flex:2;">
+                    <i class="fas fa-check-circle"></i> Guardar Cambios
+                </button>
+                <a href="/" class="btn-cancel-modern" 
+                   style="flex:1; display:flex; align-items:center; justify-content:center; 
+                          text-decoration:none;">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
