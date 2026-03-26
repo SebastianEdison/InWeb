@@ -71,7 +71,7 @@ async function procesarIngreso(event) {
     if (event) event.preventDefault();
 
     const esPeso = document.getElementById('btn-por-peso').classList.contains('active');
-    
+    const vencimientoValue = document.getElementById('form_vencimiento').value || null;
     const codigoValue = document.getElementById('codigo_search').value.trim();
     const nombreValue = document.getElementById('form_nombre').value.trim();
     const pVentaValue = document.getElementById('form_pventa').value;
@@ -103,7 +103,8 @@ async function procesarIngreso(event) {
         precio_compra: pCompraValue ? parseFloat(pCompraValue) : 0,
         precio_venta: parseFloat(pVentaValue),
         stock: document.getElementById('chk_venta_libre').checked ? 999999 : (parseInt(stockValue) || 0),
-        unidad: unidadValue // <--- SE ENVÍA A PYTHON
+        unidad: unidadValue, // <--- SE ENVÍA A PYTHON
+        fecha_vencimiento: vencimientoValue  
     };
 
     try {
@@ -142,6 +143,7 @@ function mostrarAlerta(mensaje, tipo) {
 function resetearTodo() {
     const form = document.getElementById('form-ingreso-completo');
     if(form) form.reset();
+    document.getElementById('form_vencimiento').value = ''; // ← limpiar fecha
     seleccionarTipo('codigo');
 }
 

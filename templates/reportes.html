@@ -2,6 +2,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -35,6 +36,15 @@
             </div>
         </div>
 
+        <div class="card-metrica card-graficos" onclick="mostrarSeccion('graficos')" id="tab-graficos" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-chart-pie" style="color:white;"></i></div>
+            <div class="card-content">
+                <span class="label">Gráficos</span>
+                <h2 style="font-size:1.1rem;">Análisis</h2>
+                <span class="trend">Visual del negocio</span>
+            </div>
+        </div>
+
         <div class="card-metrica card-facturas" onclick="mostrarSeccion('facturas')" id="tab-facturas" style="cursor:pointer;">
             <div class="card-icon"><i class="fas fa-file-invoice" style="color:white;"></i></div>
             <div class="card-content">
@@ -50,6 +60,15 @@
                 <span class="label">Prod. Muertos</span>
                 <h2 id="rep-muertos">0</h2>
                 <span class="trend">Sin venta > 60 días</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-vencer" onclick="mostrarSeccion('vencer')" id="tab-vencer" style="cursor:pointer;">
+            <div class="card-icon"><i class="fas fa-calendar-times" style="color:white;"></i></div>
+            <div class="card-content">
+                <span class="label">Por Vencer</span>
+                <h2 id="rep-vencer">0</h2>
+                <span class="trend">Próximos a vencer</span>
             </div>
         </div>
 
@@ -72,7 +91,7 @@
                          align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                 <h3 id="titulo-detalle">Selecciona una tarjeta para ver detalle</h3>
 
-                <!-- Filtro fecha -->
+                <!-- Filtro fecha (ventas diarias) -->
                 <div id="filtro-fecha" style="display:none; align-items:center; gap:10px;">
                     <label style="font-size:0.9rem; color:#64748b;">Ver fecha:</label>
                     <input type="date" id="fecha-busqueda" class="input-fecha">
@@ -109,7 +128,7 @@
                     </button>
                 </div>
 
-                <!-- Filtro muertos -->
+                <!-- Filtro productos muertos -->
                 <div id="filtro-muertos" style="display:none; align-items:center; gap:10px;">
                     <label style="font-size:0.9rem; color:#64748b;">Sin venta hace más de:</label>
                     <select id="filtro-dias-muertos" class="input-fecha"
@@ -122,18 +141,31 @@
                     </select>
                 </div>
 
+                <!-- Filtro vencimiento -->
+                <div id="filtro-vencer" style="display:none; align-items:center; gap:10px;">
+                    <label style="font-size:0.9rem; color:#64748b;">Próximos:</label>
+                    <select id="filtro-dias-vencer" class="input-fecha"
+                            onchange="cargarProductosPorVencer()"
+                            style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;
+                                   color:#475569; font-weight:600; outline:none;">
+                        <option value="7">7 días</option>
+                        <option value="15">15 días</option>
+                        <option value="30">30 días</option>
+                    </select>
+                </div>
+
             </div>
 
-            <!-- Tabla -->
+            <!-- Tabla dinámica -->
             <table class="tabla-reporte" id="tabla-principal" style="display:none;">
                 <thead><tr id="tabla-header"></tr></thead>
                 <tbody id="tabla-body"></tbody>
             </table>
 
-            <!-- Panel config -->
+            <!-- Panel configuración -->
             <div id="panel-config" style="display:none;"></div>
 
-            <!-- Estado vacío -->
+            <!-- Estado vacío inicial -->
             <div id="panel-vacio" style="text-align:center; padding:60px 20px; color:#94a3b8;">
                 <i class="fas fa-hand-point-up" style="font-size:2.5rem; margin-bottom:15px; display:block;"></i>
                 <p style="font-size:1rem;">Selecciona una tarjeta para ver el detalle</p>
@@ -143,7 +175,7 @@
     </div>
 </div>
 
-<!-- MODAL SALDAR FIADO -->
+<!-- ===================== MODAL SALDAR FIADO ===================== -->
 <div id="modal-saldar" style="display:none; position:fixed; z-index:10000;
      left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
      align-items:center; justify-content:center;">
@@ -196,7 +228,7 @@
     </div>
 </div>
 
-<!-- MODAL NUEVA FACTURA -->
+<!-- ===================== MODAL NUEVA FACTURA ===================== -->
 <div id="modal-factura" style="display:none; position:fixed; z-index:10000;
      left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
      align-items:center; justify-content:center;">
@@ -288,7 +320,8 @@
         </div>
     </div>
 </div>
-<!-- MODAL CAMBIAR CONTRASEÑA -->
+
+<!-- ===================== MODAL CAMBIAR CONTRASEÑA ===================== -->
 <div id="modal-password" style="display:none; position:fixed; z-index:10000;
      left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
      align-items:center; justify-content:center;">
@@ -345,6 +378,7 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}

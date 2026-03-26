@@ -3,32 +3,44 @@
 {% block title %}Ventas - Mi Negocio{% endblock %}
 
 {% block topbar_stats %}
-<div class="topbar-nivel2">
-    <button type="button" onclick="solicitarCierreTurno()" class="btn-mini-cierre"
-            style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:5px 12px;
-                   border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600;
-                   display:inline-flex; align-items:center; gap:5px;">
-        <i class="fas fa-power-off"></i> Cerrar Caja
-    </button>
     <div class="caja-diaria-group">
-        <div class="indicator-card total-dia">
-            <i class="fas fa-chart-line"></i>
-            <div class="info"><span>Venta Total</span><strong id="total-dia-acumulado">$0</strong></div>
-        </div>
-        <div class="indicator-card efectivo">
-            <i class="fas fa-money-bill-wave"></i>
-            <div class="info"><span>Efectivo</span><strong id="total-efectivo">$0</strong></div>
-        </div>
-        <div class="indicator-card tarjeta">
-            <i class="fas fa-credit-card"></i>
-            <div class="info"><span>Tarjeta</span><strong id="total-tarjeta">$0</strong></div>
-        </div>
-        <div class="indicator-card otros">
-            <i class="fas fa-wallet"></i>
-            <div class="info"><span>Otros</span><strong id="total-otros">$0</strong></div>
-        </div>
+            <div class="indicator-card total-dia">
+                <i class="fas fa-chart-line"></i>
+                <div class="info">
+                    <span>Venta Total</span>
+                    <strong id="total-dia-acumulado">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card efectivo">
+                <i class="fas fa-money-bill-wave"></i>
+                <div class="info">
+                    <span>Efectivo</span>
+                    <strong id="total-efectivo">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card tarjeta">
+                <i class="fas fa-credit-card"></i>
+                <div class="info">
+                    <span>Tarjeta</span>
+                    <strong id="total-tarjeta">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card otros">
+                <i class="fas fa-wallet"></i>
+                <div class="info">
+                    <span>Otros</span>
+                    <strong id="total-otros">$0</strong>
+                </div>
+            </div>
+
+            <!-- Cerrar caja separado con línea divisora -->
+            <div style="width:1px; background:#e2e8f0; margin:0 8px;"></div>
+            <button type="button"
+                    onclick="solicitarCierreTurno()"
+                    class="btn-mini-cierre">
+                <i class="fas fa-power-off"></i> Cerrar Caja
+            </button>
     </div>
-</div>
 
 {% endblock %}
 

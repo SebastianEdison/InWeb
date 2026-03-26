@@ -51,6 +51,14 @@ async function cargarDatosTarjetas() {
         const el = document.getElementById('rep-muertos');
         if (el) el.innerText = (datos.productos || []).length;
     } catch(e) {}
+
+        // Productos por vencer
+    try {
+        const resp  = await fetch('/api/productos_por_vencer?dias=7');
+        const datos = await resp.json();
+        const el = document.getElementById('rep-vencer');
+        if (el) el.innerText = (datos.productos || []).length;
+    } catch(e) {}
 }
 
 // ============================================================
@@ -71,13 +79,15 @@ function mostrarSeccion(seccion) {
 
     if (seccion === 'diario')   { mostrarFiltro('filtro-fecha');    cargarVentasDiarias(); }
     if (seccion === 'fiados')   { mostrarFiltro('filtro-fiados');   cargarFiados(); }
+    if (seccion === 'graficos')  { cargarGraficos(); }
     if (seccion === 'facturas') { mostrarFiltro('filtro-facturas'); cargarFacturas(); }
     if (seccion === 'muertos')  { mostrarFiltro('filtro-muertos');  cargarProductosMuertos(); }
     if (seccion === 'config')   { cargarConfig(); }
+    if (seccion === 'vencer') { mostrarFiltro('filtro-vencer'); cargarProductosPorVencer(); }
 }
 
 function ocultarFiltros() {
-    ['filtro-fecha','filtro-fiados','filtro-facturas','filtro-muertos'].forEach(id => {
+    ['filtro-fecha','filtro-fiados','filtro-facturas','filtro-muertos', 'filtro-vencer'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -233,8 +243,7 @@ async function cargarFiados() {
             return;
         }
 
-        var html = "";
-        fiados.forEach(function(f) {
+        paginar(fiados, function(f) {
             var saldo = f.monto_total - f.monto_pagado;
             var badges = {
                 'pendiente': '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Pendiente</span>',
@@ -246,18 +255,17 @@ async function cargarFiados() {
                 ? '<button onclick="abrirModalSaldar(' + f.id + ', \'' + f.nombre_cliente + '\', ' + saldo + ')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600;">Saldar</button>'
                 : '<span style="color:#94a3b8; font-size:0.8rem;">✓</span>';
 
-            html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-            html += '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-user" style="color:#f59e0b; margin-right:6px;"></i>' + f.nombre_cliente + '</td>';
-            html += '<td style="color:#64748b; font-size:0.85rem;">' + f.fecha + '</td>';
-            html += '<td style="font-size:0.8rem; color:#64748b; max-width:180px;"><span style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + (f.detalle||'') + '">' + (f.detalle||'—') + '</span></td>';
-            html += '<td style="font-weight:600;">$' + f.monto_total.toLocaleString('es-CL') + '</td>';
-            html += '<td style="color:#10b981; font-weight:600;">$' + f.monto_pagado.toLocaleString('es-CL') + '</td>';
-            html += '<td style="font-weight:700; color:' + (saldo > 0 ? '#b91c1c' : '#10b981') + ';">$' + saldo.toLocaleString('es-CL') + '</td>';
-            html += '<td>' + badge + '</td>';
-            html += '<td>' + btnSaldar + '</td>';
-            html += '</tr>';
-        });
-        body.innerHTML = html;
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-user" style="color:#f59e0b; margin-right:6px;"></i>' + f.nombre_cliente + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + f.fecha + '</td>' +
+                '<td style="font-size:0.8rem; color:#64748b; max-width:180px;"><span style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + (f.detalle||'') + '">' + (f.detalle||'—') + '</span></td>' +
+                '<td style="font-weight:600;">$' + f.monto_total.toLocaleString('es-CL') + '</td>' +
+                '<td style="color:#10b981; font-weight:600;">$' + f.monto_pagado.toLocaleString('es-CL') + '</td>' +
+                '<td style="font-weight:700; color:' + (saldo > 0 ? '#b91c1c' : '#10b981') + ';">$' + saldo.toLocaleString('es-CL') + '</td>' +
+                '<td>' + badge + '</td>' +
+                '<td>' + btnSaldar + '</td>' +
+                '</tr>';
+        }, 8);
 
     } catch(e) {
         console.error("Error fiados:", e);
@@ -294,8 +302,7 @@ async function cargarFacturas() {
             return;
         }
 
-        var html = "";
-        facturas.forEach(function(f) {
+        paginar(facturas, function(f) {
             var badge = f.estado === 'pagada'
                 ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Pagada</span>'
                 : '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Pendiente</span>';
@@ -303,18 +310,17 @@ async function cargarFacturas() {
                 ? '<button onclick="marcarFacturaPagada(' + f.id + ')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem; font-weight:600;">✓ Pagar</button>'
                 : '<span style="color:#94a3b8; font-size:0.8rem;">✓</span>';
 
-            html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-            html += '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-file-invoice" style="color:#3b82f6; margin-right:6px;"></i>#' + f.numero_factura + '</td>';
-            html += '<td style="font-weight:600; color:#334155;">' + f.proveedor + '</td>';
-            html += '<td style="color:#64748b; font-size:0.85rem;">' + (f.rut_proveedor||'—') + '</td>';
-            html += '<td style="color:#64748b; font-size:0.85rem;">' + f.fecha + '</td>';
-            html += '<td style="font-size:0.8rem; color:#64748b; max-width:180px;"><span style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + (f.productos||'') + '">' + (f.productos||'—') + '</span></td>';
-            html += '<td style="font-weight:700; color:#1e293b;">$' + (f.monto_total||0).toLocaleString('es-CL') + '</td>';
-            html += '<td>' + badge + '</td>';
-            html += '<td>' + btnPagar + '</td>';
-            html += '</tr>';
-        });
-        body.innerHTML = html;
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-file-invoice" style="color:#3b82f6; margin-right:6px;"></i>#' + f.numero_factura + '</td>' +
+                '<td style="font-weight:600; color:#334155;">' + f.proveedor + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (f.rut_proveedor||'—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + f.fecha + '</td>' +
+                '<td style="font-size:0.8rem; color:#64748b; max-width:180px;"><span style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + (f.productos||'') + '">' + (f.productos||'—') + '</span></td>' +
+                '<td style="font-weight:700; color:#1e293b;">$' + (f.monto_total||0).toLocaleString('es-CL') + '</td>' +
+                '<td>' + badge + '</td>' +
+                '<td>' + btnPagar + '</td>' +
+                '</tr>';
+        }, 8);
 
     } catch(e) {
         console.error("Error facturas:", e);
@@ -358,8 +364,8 @@ async function cargarProductosMuertos() {
     body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
 
     try {
-        const resp  = await fetch('/api/productos_muertos?dias=' + dias);
-        const datos = await resp.json();
+        const resp      = await fetch('/api/productos_muertos?dias=' + dias);
+        const datos     = await resp.json();
         const productos = datos.productos || [];
 
         if (productos.length === 0) {
@@ -367,18 +373,16 @@ async function cargarProductosMuertos() {
             return;
         }
 
-        var html = "";
-        productos.forEach(function(p) {
+        paginar(productos, function(p) {
             var stockColor = p.stock <= 3 ? '#b91c1c' : '#475569';
             var stockBg    = p.stock <= 3 ? '#fee2e2' : '#f1f5f9';
-            html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-            html += '<td style="color:#64748b; font-size:0.85rem;">' + (p.codigo_barra||'—') + '</td>';
-            html += '<td style="font-weight:600; color:#1e293b;">' + p.nombre + '</td>';
-            html += '<td style="text-align:center;"><span style="background:' + stockBg + '; color:' + stockColor + '; padding:3px 10px; border-radius:20px; font-size:0.85rem; font-weight:700;">' + p.stock + ' uds</span></td>';
-            html += '<td style="color:#64748b; font-size:0.85rem;">' + (p.ultima_venta ? p.ultima_venta.substring(0,10) : '<span style="color:#ef4444;">Sin ventas</span>') + '</td>';
-            html += '</tr>';
-        });
-        body.innerHTML = html;
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.codigo_barra||'—') + '</td>' +
+                '<td style="font-weight:600; color:#1e293b;">' + p.nombre + '</td>' +
+                '<td style="text-align:center;"><span style="background:' + stockBg + '; color:' + stockColor + '; padding:3px 10px; border-radius:20px; font-size:0.85rem; font-weight:700;">' + p.stock + ' uds</span></td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.ultima_venta ? p.ultima_venta.substring(0,10) : '<span style="color:#ef4444;">Sin ventas</span>') + '</td>' +
+                '</tr>';
+        }, 4);
 
     } catch(e) {
         console.error("Error muertos:", e);
@@ -460,10 +464,18 @@ async function cargarConfig() {
 
             '</div>';
 
-    } catch(e) {
-        console.error("Error config:", e);
-        panel.innerHTML = '<p style="text-align:center; color:#ef4444;">Error al cargar configuracion.</p>';
-    }
+        } catch(e) {
+            console.error("Error config:", e);
+            panel.innerHTML = `
+                <div style="text-align:center; padding:40px 20px;">
+                    <i class="fas fa-lock" style="font-size:3rem; color:#94a3b8; margin-bottom:15px; display:block;"></i>
+                    <h3 style="color:#1e293b; margin-bottom:8px;">Acceso Restringido</h3>
+                    <p style="color:#64748b; font-size:0.95rem;">
+                        Esta sección solo está disponible para administradores.
+                    </p>
+                </div>
+            `;
+        }
 }
 
 async function guardarConfig() {
@@ -744,4 +756,310 @@ function descargarRespaldo() {
 
 function descargarExcelDia(fecha) {
     window.location.href = '/api/excel_dia/' + fecha;
+}
+
+// ============================================================
+// --- GRÁFICOS ---
+// ============================================================
+
+let chartTorta   = null;
+let chartBarras  = null;
+let chartLinea   = null;
+
+async function cargarGraficos() {
+    const titulo = document.getElementById('titulo-detalle');
+    titulo.innerText = "Análisis Visual del Negocio";
+
+    document.getElementById('tabla-principal').style.display = 'none';
+    document.getElementById('panel-vacio').style.display     = 'none';
+    const panel = document.getElementById('panel-config');
+    panel.style.display = 'block';
+    panel.innerHTML = '<p style="text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando gráficos...</p>';
+
+    try {
+        const resp  = await fetch('/api/datos_graficos');
+        const datos = await resp.json();
+
+        // Destruir gráficos anteriores si existen
+        if (chartTorta)  { chartTorta.destroy();  chartTorta  = null; }
+        if (chartBarras) { chartBarras.destroy();  chartBarras = null; }
+        if (chartLinea)  { chartLinea.destroy();   chartLinea  = null; }
+
+        panel.innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:25px; margin-bottom:25px;">
+
+                <!-- Torta: Métodos de pago -->
+                <div style="background:#f8fafc; border-radius:12px; padding:20px;">
+                    <h4 style="color:#1e293b; margin:0 0 15px 0; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-chart-pie" style="color:#3b82f6;"></i>
+                        Métodos de Pago (últimos 30 días)
+                    </h4>
+                    <div style="position:relative; height:250px;">
+                        <canvas id="chart-torta"></canvas>
+                    </div>
+                </div>
+
+                <!-- Línea: Evolución semanal -->
+                <div style="background:#f8fafc; border-radius:12px; padding:20px;">
+                    <h4 style="color:#1e293b; margin:0 0 15px 0; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-chart-line" style="color:#10b981;"></i>
+                        Evolución de Ventas por Semana
+                    </h4>
+                    <div style="position:relative; height:250px;">
+                        <canvas id="chart-linea"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Barras: Productos más vendidos -->
+            <div style="background:#f8fafc; border-radius:12px; padding:20px;">
+                <h4 style="color:#1e293b; margin:0 0 15px 0; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-chart-bar" style="color:#8b5cf6;"></i>
+                    Productos Más Vendidos
+                </h4>
+                <div style="position:relative; height:280px;">
+                    <canvas id="chart-barras"></canvas>
+                </div>
+            </div>
+        `;
+
+        // ── GRÁFICO TORTA ──
+        const metodos = datos.metodos || {};
+        chartTorta = new Chart(
+            document.getElementById('chart-torta'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(metodos).map(function(m) {
+                        return m.charAt(0).toUpperCase() + m.slice(1);
+                    }),
+                    datasets: [{
+                        data: Object.values(metodos),
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ' $' + ctx.parsed.toLocaleString('es-CL');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // ── GRÁFICO LÍNEA ──
+        const semanas = datos.semanas || [];
+        chartLinea = new Chart(
+            document.getElementById('chart-linea'),
+            {
+                type: 'line',
+                data: {
+                    labels: semanas.map(function(s) { return s.semana; }),
+                    datasets: [{
+                        label: 'Ventas',
+                        data: semanas.map(function(s) { return s.total; }),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(val) {
+                                    return '$' + val.toLocaleString('es-CL');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // ── GRÁFICO BARRAS HORIZONTALES ──
+        const productos = datos.productos || [];
+        chartBarras = new Chart(
+            document.getElementById('chart-barras'),
+            {
+                type: 'bar',
+                data: {
+                    labels: productos.map(function(p) { return p.nombre; }),
+                    datasets: [{
+                        label: 'Unidades vendidas',
+                        data: productos.map(function(p) { return p.cantidad; }),
+                        backgroundColor: [
+                            '#3b82f6','#10b981','#f59e0b','#8b5cf6',
+                            '#ef4444','#06b6d4','#84cc16','#f97316'
+                        ],
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(val) {
+                                    return val + ' uds';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+    } catch(e) {
+        console.error("Error graficos:", e);
+        document.getElementById('panel-config').innerHTML =
+            '<p style="text-align:center; color:#ef4444;">Error al cargar gráficos.</p>';
+    }
+}
+
+// ============================================================
+// --- PAGINACIÓN ---
+// ============================================================
+
+let paginaActual = 1;
+const ITEMS_POR_PAGINA = 10;
+let datosCompletos = [];
+
+function paginar(datos, funcionRenderFila, colspan) {
+    datosCompletos = datos;
+    paginaActual   = 1;
+    renderPagina(funcionRenderFila, colspan);
+}
+
+function renderPagina(funcionRenderFila, colspan) {
+    const body      = document.getElementById('tabla-body');
+    const inicio    = (paginaActual - 1) * ITEMS_POR_PAGINA;
+    const fin       = inicio + ITEMS_POR_PAGINA;
+    const pagina    = datosCompletos.slice(inicio, fin);
+    const totalPags = Math.ceil(datosCompletos.length / ITEMS_POR_PAGINA);
+
+    var html = "";
+    pagina.forEach(function(item) {
+        html += funcionRenderFila(item);
+    });
+
+    // Fila de paginación
+    if (totalPags > 1) {
+        html += `
+            <tr>
+                <td colspan="${colspan}" style="padding:15px; text-align:center; border-top:2px solid #f1f5f9;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <button onclick="cambiarPagina(-1)"
+                                ${paginaActual === 1 ? 'disabled' : ''}
+                                style="padding:6px 14px; border-radius:8px; border:1px solid #e2e8f0;
+                                       background:${paginaActual === 1 ? '#f8fafc' : '#fff'};
+                                       color:${paginaActual === 1 ? '#94a3b8' : '#1e293b'};
+                                       cursor:${paginaActual === 1 ? 'not-allowed' : 'pointer'};
+                                       font-weight:600;">
+                            ← Anterior
+                        </button>
+                        <span style="font-size:0.85rem; color:#64748b;">
+                            Página <strong style="color:#1e293b;">${paginaActual}</strong> de <strong style="color:#1e293b;">${totalPags}</strong>
+                            &nbsp;·&nbsp; ${datosCompletos.length} registros
+                        </span>
+                        <button onclick="cambiarPagina(1)"
+                                ${paginaActual === totalPags ? 'disabled' : ''}
+                                style="padding:6px 14px; border-radius:8px; border:1px solid #e2e8f0;
+                                       background:${paginaActual === totalPags ? '#f8fafc' : '#fff'};
+                                       color:${paginaActual === totalPags ? '#94a3b8' : '#1e293b'};
+                                       cursor:${paginaActual === totalPags ? 'not-allowed' : 'pointer'};
+                                       font-weight:600;">
+                            Siguiente →
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    body.innerHTML = html;
+}
+
+function cambiarPagina(delta) {
+    const totalPags = Math.ceil(datosCompletos.length / ITEMS_POR_PAGINA);
+    paginaActual = Math.max(1, Math.min(paginaActual + delta, totalPags));
+
+    if (seccionActiva === 'fiados')   { renderPagina(renderFilaFiado, 8); }
+    if (seccionActiva === 'facturas') { renderPagina(renderFilaFactura, 8); }
+    if (seccionActiva === 'muertos')  { renderPagina(renderFilaMuerto, 4); }
+    if (seccionActiva === 'diario')   { renderPagina(renderFilaDia, 5); }
+}
+
+async function cargarProductosPorVencer() {
+    const titulo = document.getElementById('titulo-detalle');
+    const header = document.getElementById('tabla-header');
+    const body   = document.getElementById('tabla-body');
+
+    const dias = document.getElementById('filtro-dias-vencer') ? document.getElementById('filtro-dias-vencer').value : 7;
+    titulo.innerText = 'Productos que vencen en los próximos ' + dias + ' días';
+    header.innerHTML = '<th>Producto</th><th>Código</th><th style="width:120px;">Stock</th><th style="width:160px;">Vence</th><th style="width:100px;">Estado</th>';
+
+    mostrarTabla();
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+
+    try {
+        const resp      = await fetch('/api/productos_por_vencer?dias=' + dias);
+        const datos     = await resp.json();
+        const productos = datos.productos || [];
+
+        // Actualizar contador en tarjeta
+        const el = document.getElementById('rep-vencer');
+        if (el) el.innerText = productos.length;
+
+        if (productos.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">No hay productos próximos a vencer en este período 🎉</td></tr>';
+            return;
+        }
+
+        paginar(productos, function(p) {
+            const hoy        = new Date();
+            const vence      = new Date(p.fecha_vencimiento);
+            const diffDias   = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
+
+            const badge = diffDias <= 3
+                ? '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">⚠ Urgente</span>'
+                : '<span style="background:#fff7ed;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Próximo</span>';
+
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="font-weight:600; color:#1e293b;">' + p.nombre + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.codigo_barra||'—') + '</td>' +
+                '<td style="text-align:center;"><span style="background:#f1f5f9; color:#475569; padding:3px 10px; border-radius:20px; font-size:0.85rem; font-weight:700;">' + p.stock + ' uds</span></td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + p.fecha_vencimiento + ' <small style="color:#94a3b8;">(' + diffDias + ' días)</small></td>' +
+                '<td>' + badge + '</td>' +
+                '</tr>';
+        }, 5);
+
+    } catch(e) {
+        console.error("Error vencer:", e);
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;">Error de conexión.</td></tr>';
+    }
 }

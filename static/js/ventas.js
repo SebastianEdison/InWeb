@@ -1,4 +1,4 @@
-// static/js/ventas.js
+// ventas.js
 
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-ventas');
@@ -73,10 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputRecibido) inputRecibido.addEventListener('input', calcularVuelto);
 });
 
-// ============================================================
-// --- FUNCIONES DE INTERFAZ ---
-// ============================================================
-
+// -- interfaz indicadores topbar --
 function actualizarInterfazVentas() {
     const totalDia      = localStorage.getItem('venta_total_dia') || "0";
     const totalEfectivo = localStorage.getItem('total_efectivo')  || "0";
@@ -94,10 +91,7 @@ function actualizarInterfazVentas() {
     if (elOtros)     elOtros.textContent     = `$${parseInt(totalOtros).toLocaleString('es-CL')}`;
 }
 
-// ============================================================
-// --- GESTIÓN DEL CARRITO ---
-// ============================================================
-
+// -- carrito de ventas --
 function agregarAlCarrito(p) {
     if (p.unidad === 'Kg') {
         abrirModalPeso(p);
@@ -106,8 +100,9 @@ function agregarAlCarrito(p) {
 
     const cuerpoTabla = document.getElementById('cuerpo-tabla-ventas');
     let filaExistente = document.querySelector(`tr[data-id="${p.id}"]`);
+    let forzado = false;
 
-    // Validación de stock
+    // Alerta si el stock no alcanza
     if (p.stock !== undefined && p.stock !== 999999) {
         const cantidadActual = filaExistente
             ? parseInt(filaExistente.querySelector('.celda-cantidad').textContent)
@@ -121,10 +116,12 @@ function agregarAlCarrito(p) {
                 `¿Deseas agregarlo de todas formas?`
             );
             if (!confirmar) return;
+            forzado = true;
         }
     }
 
     if (filaExistente) {
+        if (forzado) filaExistente.setAttribute('data-forzado', 'true');
         const btnSuma = filaExistente.querySelector('.btn-qty-plus');
         cambiarCantidad(btnSuma, 1, p.precio, p.stock);
     } else {
@@ -132,6 +129,7 @@ function agregarAlCarrito(p) {
         nuevaFila.setAttribute('data-id', p.id);
         nuevaFila.setAttribute('data-unidad', 'Unidad');
         nuevaFila.setAttribute('data-stock', p.stock ?? 999999);
+        if (forzado) nuevaFila.setAttribute('data-forzado', 'true');
 
         nuevaFila.innerHTML = `
             <td>${p.nombre}</td>
@@ -159,10 +157,7 @@ function agregarAlCarrito(p) {
     guardarEstadoCarrito();
 }
 
-// ============================================================
-// --- MODAL DE MONTO (Productos por Kg) ---
-// ============================================================
-
+// -- modal monto productos por kg --
 let _productoKgPendiente = null;
 
 function abrirModalPeso(producto) {
@@ -233,10 +228,7 @@ function confirmarProductoPeso() {
     cerrarModalPeso();
 }
 
-// ============================================================
-// --- MODAL FIADO ---
-// ============================================================
-
+// -- modal fiado --
 function abrirModalFiado() {
     const total = document.getElementById('gran-total').textContent;
     if (total === "$0") {
@@ -244,7 +236,6 @@ function abrirModalFiado() {
         return;
     }
 
-    // Rellenar detalle del carrito en el modal
     let detalleHtml = "";
     document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
         const nombre    = fila.cells[0].innerText.split('\n')[0].trim();
@@ -280,7 +271,6 @@ async function confirmarFiado() {
     const totalTexto = document.getElementById('fiado-total').textContent;
     const monto      = parseInt(totalTexto.replace(/[^0-9]/g, "")) || 0;
 
-    // Armamos detalle como texto para guardar en DB
     const productos = [];
     document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
         const nombre_prod = fila.cells[0].innerText.split('\n')[0].trim();
@@ -303,11 +293,8 @@ async function confirmarFiado() {
         const result = await response.json();
 
         if (result.status === 'success') {
-            // Sumar al contador de fiados del turno
             let fiadosActual = parseInt(localStorage.getItem('total_fiados') || 0);
             localStorage.setItem('total_fiados', fiadosActual + monto);
-
-            // Limpiar carrito
             localStorage.removeItem('carrito_actual');
             document.getElementById('cuerpo-tabla-ventas').innerHTML = "";
             actualizarTotalesGenerales();
@@ -325,10 +312,7 @@ async function confirmarFiado() {
     }
 }
 
-// ============================================================
-// --- CIERRE DE CAJA ---
-// ============================================================
-
+// -- modal cierre de caja --
 function solicitarCierreTurno() {
     const efectivo = parseInt(localStorage.getItem('total_efectivo') || 0);
     const tarjeta  = parseInt(localStorage.getItem('total_tarjeta')  || 0);
@@ -387,10 +371,7 @@ async function confirmarCierreCaja() {
     }
 }
 
-// ============================================================
-// --- CANTIDAD Y CÁLCULOS ---
-// ============================================================
-
+// -- controles de cantidad en tabla --
 function cambiarCantidad(btn, delta, precioBase, stock) {
     const fila = btn.closest('tr');
     const span = fila.querySelector('.celda-cantidad');
@@ -405,6 +386,7 @@ function cambiarCantidad(btn, delta, precioBase, stock) {
             `¿Deseas agregar de todas formas?`
         );
         if (!confirmar) return;
+        fila.setAttribute('data-forzado', 'true');
     }
 
     span.textContent = nuevaCant;
@@ -440,10 +422,7 @@ function actualizarTotalesGenerales() {
     document.getElementById('total-iva').textContent   = `$${(granTotal - Math.round(granTotal / 1.19)).toLocaleString('es-CL')}`;
 }
 
-// ============================================================
-// --- PERSISTENCIA DEL CARRITO ---
-// ============================================================
-
+// -- guardar y reconstruir carrito en localStorage --
 function guardarEstadoCarrito() {
     const productos = [];
     document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
@@ -475,14 +454,14 @@ function reconstruirCarritoDesdeStorage(productos) {
     productos.forEach(p => agregarAlCarrito(p));
 }
 
-// ============================================================
-// --- PROCESO DE PAGO ---
-// ============================================================
-
+// -- procesar pago y registrar venta en backend --
 async function procesarVentaFinal() {
     const totalTexto = document.getElementById('modal-total-grande').textContent;
     const totalVenta = parseInt(totalTexto.replace(/[^0-9]/g, ""));
     const metodo     = document.getElementById('metodo-seleccionado').value;
+
+    // Verificar si hay productos con stock forzado
+    const hayForzado = document.querySelectorAll('#cuerpo-tabla-ventas tr[data-forzado="true"]').length > 0;
 
     // Validar monto en efectivo
     if (metodo === 'efectivo') {
@@ -515,7 +494,7 @@ async function procesarVentaFinal() {
         const response = await fetch('/api/registrar_venta', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ carrito, metodo_pago: metodo })
+            body: JSON.stringify({ carrito, metodo_pago: metodo, forzar: hayForzado })
         });
 
         const result = await response.json();

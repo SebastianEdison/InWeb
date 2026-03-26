@@ -39,18 +39,22 @@
                 </ul>
             </nav>
 
-            <!-- Usuario + Salir -->
-            <div class="topbar-usuario">
-                
-                <span class="user-name">
-                    <i class="fas fa-user-circle" style="color:#2563eb;"></i>
+<!-- Usuario + Salir -->
+            <div style="display:flex; align-items:center; gap:6px; background:#f1f5f9; 
+                        padding:5px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+                <i class="fas fa-user-circle" style="color:#2563eb; font-size:1rem;"></i>
+                <span style="font-size:0.85rem; color:#1e293b; font-weight:600;">
                     {{ session.get('nombre', '') }}
-                    {% if session.get('rol') == 'admin' %}
-                        <span class="badge-admin">ADMIN</span>
-                    
                 </span>
+                {% if session.get('rol') == 'admin' %}
+                    <span class="badge-admin">ADMIN</span>
                 {% endif %}
-                <a href="/logout" onclick="return confirmarLogout()" class="btn-salir">
+                <span style="width:1px; background:#cbd5e1; height:16px; 
+                             display:inline-block; margin:0 4px;"></span>
+                <a href="/logout"
+                   onclick="return confirmarLogout()"
+                   style="color:#b91c1c; font-size:0.8rem; font-weight:600;
+                          text-decoration:none; display:flex; align-items:center; gap:4px;">
                     <i class="fas fa-sign-out-alt"></i> Salir
                 </a>
             </div>
@@ -58,10 +62,9 @@
         </div>
     </header>
 
-    <!-- ═══════════════════════════════════════════════
-         NIVEL 2: Stats de caja (solo en ventas)
-    ═══════════════════════════════════════════════ -->
-    {% block topbar_stats %}{% endblock %}
+    <div class="top-bar-line2">
+        {% block topbar_stats %}{% endblock %}
+    </div>
 
     <!-- ═══════════════════════════════════════════════
          CONTENIDO PRINCIPAL
@@ -231,5 +234,15 @@ async function confirmarCambioPassword() {
     }
 }
 </script>
+<footer style="text-align:center; padding:15px 20px; margin-top:30px;
+               border-top:1px solid #e2e8f0; color:#94a3b8; font-size:0.78rem;">
+    <span>EL HISTORICO &copy; 2026</span>
+    <span style="margin:0 8px; color:#e2e8f0;">|</span>
+    <span>Desarrollado por 
+        <strong style="color:#2563eb;">Sebastian Toledo</strong>
+    </span>
+    <span style="margin:0 8px; color:#e2e8f0;">|</span>
+    <span>Sistema de Gestión de Inventario</span>
+</footer>
 </body>
 </html>

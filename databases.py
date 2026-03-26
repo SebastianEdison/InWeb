@@ -142,41 +142,41 @@ def crear_tablas():
             INSERT OR IGNORE INTO configuracion (clave, valor) 
             VALUES (?, ?)
         """, (clave, valor))
+    try: 
+        cursor.execute("ALTER TABLE productos ADD COLUMN fecha_vencimiento TEXT DEFAULT NULL")
+    except: 
+        pass
 
     conexion.commit()
     conexion.close()
 
-def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad'):
+def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None):
     conexion = conectar()
-    # Usamos Row para poder acceder por nombre de columna como hiciste en tu código
     conexion.row_factory = sqlite3.Row 
     cursor = conexion.cursor()
     
     try:
-        # 1. Verificamos si existe
         cursor.execute("SELECT id, stock FROM productos WHERE codigo_barra = ?", (codigo,))
         existente = cursor.fetchone()
 
         if existente:
-            # 2. SI EXISTE: Actualizamos datos y sumamos stock
             id_producto = existente['id']
             stock_actual = existente['stock']
             nuevo_total = stock_actual + int(stock)
             
             cursor.execute("""
                 UPDATE productos 
-                SET nombre = ?, precio_venta = ?, costo = ?, stock = ?, unidad = ?
-                WHERE id = ?
-            """, (nombre, precio, costo, nuevo_total, unidad, id_producto))
-            print(f"✅ Producto '{nombre}' actualizado ({unidad}). Nuevo stock: {nuevo_total}")
+                SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?
+                WHERE id=?
+            """, (nombre, precio, costo, nuevo_total, unidad, fecha_vencimiento, id_producto))
+            print(f"✅ Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
             
         else:
-            # 3. SI NO EXISTE: Insertamos con la nueva columna 'unidad'
             cursor.execute("""
-                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (codigo, nombre, precio, costo, stock, unidad))
-            print(f"✨ Nuevo producto '{nombre}' registrado como {unidad}")
+                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad, fecha_vencimiento)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (codigo, nombre, precio, costo, stock, unidad, fecha_vencimiento))
+            print(f"✨ Nuevo producto '{nombre}' registrado")
 
         conexion.commit()
 
@@ -277,11 +277,21 @@ def modificar_stock(producto_id, cantidad_cambio):
     finally:
         if conexion: conexion.close()
 
-def registrar_venta(carrito, metodo_pago="Efectivo"):
+def registrar_venta(carrito, metodo_pago="Efectivo", forzar= False):
     conexion = None
     try:
         conexion = conectar()
         cursor = conexion.cursor()
+        if not forzar:
+            for item in carrito:
+                cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (item['id'],))
+                producto = cursor.fetchone()
+                
+                if not producto:
+                    return False, f"El producto con ID {item['id']} no existe."
+                
+                if producto['stock'] < item['cantidad']:
+                    return False, f"Stock insuficiente para {producto['nombre']}. Solo quedan {producto['stock']}."
 
         # 1. VALIDACIÓN: Revisar si hay stock para TODO el carrito antes de empezar
         for item in carrito:
@@ -376,15 +386,15 @@ def probar_sistema():
 
     print("\n --- PRUEBAS FINALIZADAS ---")
 
-def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad'):
+def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None):
     conexion = conectar()
     cursor = conexion.cursor()
     try:
         cursor.execute("""
             UPDATE productos 
-            SET nombre = ?, precio_venta = ?, costo = ?, stock = ?, unidad = ?
-            WHERE id = ?
-        """, (nombre, precio, costo, stock, unidad, id_p))
+            SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?
+            WHERE id=?
+        """, (nombre, precio, costo, stock, unidad, fecha_vencimiento, id_p))
         conexion.commit()
         return True
     except sqlite3.Error as e:
@@ -798,4 +808,23 @@ def generar_excel_dia(fecha):
     wb.save(output)
     output.seek(0)
     return output
+
+def obtener_productos_por_vencer(dias=7):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, nombre, codigo_barra, stock, fecha_vencimiento
+        FROM productos
+        WHERE fecha_vencimiento IS NOT NULL
+        AND fecha_vencimiento != ''
+        AND DATE(fecha_vencimiento) <= DATE('now', '+' || ? || ' days')
+        AND DATE(fecha_vencimiento) >= DATE('now')
+        AND activo = 1
+        ORDER BY fecha_vencimiento ASC
+    """, (dias,))
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
 

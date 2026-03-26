@@ -7,7 +7,7 @@ import pytz
 from databases import (
     obtener_productos, eliminar_producto, actualizar_producto, 
     agregar_producto, buscar_producto_por_codigo, conectar, 
-    crear_tablas, guardar_cierre_db, obtener_historial_db,
+    crear_tablas, guardar_cierre_db, obtener_historial_db,obtener_productos_por_vencer,
     registrar_venta,guardar_fiado_db, obtener_fiados_db, saldar_fiado_db,
     verificar_usuario, crear_usuario, obtener_usuarios, guardar_factura_db, obtener_facturas_db, actualizar_estado_factura_db,
     obtener_productos_muertos_db, obtener_config_db, guardar_config_db ,cambiar_password_db, generar_reporte_excel,generar_excel_dia
@@ -15,6 +15,7 @@ from databases import (
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
+app.permanent_session_lifetime = timedelta(hours=12)
 tz_chile = pytz.timezone('America/Santiago')
 fecha_local = datetime.now(tz_chile).strftime('%d-%m-%Y %H:%M')
 
@@ -51,6 +52,7 @@ def login():
         usuario = verificar_usuario(username, password)
         
         if usuario:
+            session.permanent = True
             session['usuario_id'] = usuario['id']
             session['username']   = usuario['username']
             session['nombre']     = usuario['nombre']
@@ -97,6 +99,16 @@ def api_crear_usuario():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/productos_por_vencer')
+@login_requerido
+def api_productos_por_vencer():
+    try:
+        dias     = int(request.args.get('dias', 7))
+        productos = obtener_productos_por_vencer(dias)
+        return jsonify({"productos": productos, "dias": dias})
+    except Exception as e:
+        return jsonify({"productos": [], "error": str(e)}), 500
+
 # --- VARIABLE TEMPORAL SOLO PARA EL TICKET ACTUAL ---
 cierre_reciente_ticket = {} 
 
@@ -134,11 +146,12 @@ def api_registrar_venta():
         data = request.get_json()
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'Efectivo')
+        forzar = data.get('forzar', False) 
 
         if not carrito:
             return jsonify({"status": "error", "message": "El carrito está vacío"}), 400
 
-        exito, resultado = registrar_venta(carrito, metodo_pago)
+        exito, resultado = registrar_venta(carrito, metodo_pago, forzar)
 
         if exito:
             return jsonify({"status": "success", "venta_id": resultado})
@@ -349,6 +362,7 @@ def editar_vista(id_p):
 @app.route('/agregar', methods=['GET', 'POST'])
 @login_requerido
 def agregar():
+    
     if request.method == 'POST':
         data = request.get_json()
         
@@ -358,8 +372,9 @@ def agregar():
         precio_c = data.get('precio_compra') or 0
         stock = data.get('stock') or 0
         unidad = data.get('unidad', 'Unidad')
+        fecha_vencimiento = data.get('fecha_vencimiento', None)
         
-        agregar_producto(codigo, nombre, precio_v, precio_c, stock, unidad)
+        agregar_producto(codigo, nombre, precio_v, precio_c, stock, unidad, fecha_vencimiento)
         
         return jsonify({"status": "success"})
     
@@ -379,7 +394,8 @@ def buscar_producto():
             "precio": p['precio_venta'],
             "unidad": p['unidad'],
             "codigo_barra": p['codigo_barra'],
-            "stock": p['stock']
+            "stock": p['stock'],
+            "fecha_vencimiento": p['fecha_vencimiento'] if p['fecha_vencimiento'] else None
         })
     return jsonify(lista)
 
@@ -548,6 +564,57 @@ def api_excel_dia(fecha):
         )
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/datos_graficos')
+@login_requerido
+def api_datos_graficos():
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # 1. Efectivo vs Tarjeta vs Otros (últimos 30 días)
+        cursor.execute("""
+            SELECT metodo_pago, SUM(total) as total
+            FROM ventas
+            WHERE fecha >= datetime('now', '-30 days')
+            GROUP BY metodo_pago
+        """)
+        metodos = {row['metodo_pago']: row['total'] for row in cursor.fetchall()}
+
+        # 2. Productos más vendidos (top 8)
+        cursor.execute("""
+            SELECT p.nombre, SUM(dv.cantidad) as total_vendido
+            FROM detalle_venta dv
+            JOIN productos p ON p.id = dv.producto_id
+            GROUP BY p.id
+            ORDER BY total_vendido DESC
+            LIMIT 8
+        """)
+        productos = [{'nombre': r['nombre'], 'cantidad': r['total_vendido']} 
+                     for r in cursor.fetchall()]
+
+        # 3. Evolución por semana (últimas 8 semanas)
+        cursor.execute("""
+            SELECT 
+                strftime('%Y-W%W', fecha) as semana,
+                SUM(total) as total
+            FROM ventas
+            WHERE fecha >= datetime('now', '-56 days')
+            GROUP BY semana
+            ORDER BY semana ASC
+        """)
+        semanas = [{'semana': r['semana'], 'total': r['total']} 
+                   for r in cursor.fetchall()]
+
+        conn.close()
+        return jsonify({
+            'metodos': metodos,
+            'productos': productos,
+            'semanas': semanas
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     crear_tablas() 

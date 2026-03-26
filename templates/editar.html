@@ -69,6 +69,16 @@
                         <option value="Unidad" {{ 'selected' if p['unidad'] == 'Unidad' }}>Unidad</option>
                         <option value="Kg"     {{ 'selected' if p['unidad'] == 'Kg' }}>Kilogramo (Kg)</option>
                     </select>
+                    <div class="form-group">
+                        <label class="lbl-blue">
+                            <i class="fas fa-calendar-times"></i> Fecha Vencimiento
+                            <span style="color:#94a3b8; font-weight:400; text-transform:none; font-size:0.75rem;">(opcional)</span>
+                        </label>
+                        <input type="date" name="fecha_vencimiento"
+                            value="{{ p['fecha_vencimiento'] if p['fecha_vencimiento'] else '' }}"
+                            style="width:100%; padding:14px; border:2px solid #edf2f7; border-radius:12px;
+                                    font-size:1rem; background:#f8fafc; color:#1e293b; outline:none;">
+                    </div>                    
                 </div>
             </div>
 

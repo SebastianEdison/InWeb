@@ -290,3 +290,6 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.card-graficos .card-icon { background: #6366f1; }
+.card-graficos .trend     { color: #4f46e5; }
