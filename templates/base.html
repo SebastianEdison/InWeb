@@ -12,16 +12,12 @@
 </head>
 <body>
 
-    <!-- ═══════════════════════════════════════════════
-         NIVEL 1: Logo + Navegación + Usuario
-    ═══════════════════════════════════════════════ -->
+    <!-- barra superior: logo, navegación y usuario -->
     <header class="topbar-nivel1">
         <div class="topbar-nivel1-inner">
 
-            <!-- Logo -->
             <h2 class="app-logo">🏪 EL HISTORICO</h2>
 
-            <!-- Navegación -->
             <nav class="top-nav">
                 <ul class="nav-menu">
                     <li class="{{ 'active' if request.path == '/' }}">
@@ -39,22 +35,16 @@
                 </ul>
             </nav>
 
-<!-- Usuario + Salir -->
-            <div style="display:flex; align-items:center; gap:6px; background:#f1f5f9; 
-                        padding:5px 12px; border-radius:8px; border:1px solid #e2e8f0;">
-                <i class="fas fa-user-circle" style="color:#2563eb; font-size:1rem;"></i>
-                <span style="font-size:0.85rem; color:#1e293b; font-weight:600;">
-                    {{ session.get('nombre', '') }}
-                </span>
+            <div class="topbar-usuario">
+                <i class="fas fa-user-circle"></i>
+                <span class="usuario-nombre">{{ session.get('nombre', '') }}</span>
                 {% if session.get('rol') == 'admin' %}
                     <span class="badge-admin">ADMIN</span>
                 {% endif %}
-                <span style="width:1px; background:#cbd5e1; height:16px; 
-                             display:inline-block; margin:0 4px;"></span>
+                <span class="usuario-separador"></span>
                 <a href="/logout"
                    onclick="return confirmarLogout()"
-                   style="color:#b91c1c; font-size:0.8rem; font-weight:600;
-                          text-decoration:none; display:flex; align-items:center; gap:4px;">
+                   class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i> Salir
                 </a>
             </div>
@@ -66,9 +56,7 @@
         {% block topbar_stats %}{% endblock %}
     </div>
 
-    <!-- ═══════════════════════════════════════════════
-         CONTENIDO PRINCIPAL
-    ═══════════════════════════════════════════════ -->
+    <!-- contenido principal -->
     <main class="main-content-master">
         <div class="container-fluid-custom">
             {% block content %}{% endblock %}
@@ -77,172 +65,59 @@
 
     {% block scripts %}{% endblock %}
 
-    <script>
-        function confirmarLogout() {
-            const total = parseInt(localStorage.getItem('venta_total_dia') || 0);
-            if (total > 0) {
-                return confirm('⚠️ Aún no has cerrado la caja.\n\n¿Estás seguro de que deseas salir sin cerrar caja?');
-            }
-            return true;
-        }
-    </script>
-    <!-- MODAL CAMBIAR CONTRASEÑA -->
-<div id="modal-password" style="display:none; position:fixed; z-index:10000;
-     left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
-     align-items:center; justify-content:center;">
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
-    <div style="background:white; max-width:380px; width:92%; border-radius:16px;
-                overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.3); margin:auto;">
+    <!-- modal cambiar contraseña -->
+    <div id="modal-password" class="modal-gen">
+        <div class="modal-gen-box w-sm">
 
-        <!-- Header -->
-        <div style="background:#eff6ff; padding:18px 25px; border-bottom:1px solid #bfdbfe;
-                    display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="font-size:1.1rem; color:#1d4ed8; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-lock"></i> Cambiar Contraseña
-            </h2>
-            <span onclick="cerrarModalPassword()"
-                  style="cursor:pointer; font-size:1.5rem; color:#94a3b8; line-height:1;">&times;</span>
-        </div>
-
-        <!-- Body -->
-        <div style="padding:25px;">
-
-            <div style="margin-bottom:15px;">
-                <label style="font-size:0.8rem; font-weight:700; color:#475569;
-                              text-transform:uppercase; display:block; margin-bottom:6px;">
-                    <i class="fas fa-lock" style="color:#64748b;"></i> Contraseña Actual
-                </label>
-                <input type="password" id="pwd-actual" placeholder="••••••••"
-                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
-                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            <div class="modal-gen-header mh-blue">
+                <h2><i class="fas fa-lock"></i> Cambiar Contraseña</h2>
+                <span class="btn-cerrar-modal" onclick="cerrarModalPassword()">&times;</span>
             </div>
 
-            <div style="margin-bottom:15px;">
-                <label style="font-size:0.8rem; font-weight:700; color:#475569;
-                              text-transform:uppercase; display:block; margin-bottom:6px;">
-                    <i class="fas fa-key" style="color:#3b82f6;"></i> Nueva Contraseña
-                </label>
-                <input type="password" id="pwd-nueva" placeholder="••••••••"
-                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
-                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            <div class="modal-gen-body">
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-lock"></i> Contraseña Actual
+                    </label>
+                    <input type="password" id="pwd-actual" placeholder="••••••••" class="pwd-input">
+                </div>
+
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-key"></i> Nueva Contraseña
+                    </label>
+                    <input type="password" id="pwd-nueva" placeholder="••••••••" class="pwd-input">
+                </div>
+
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-key"></i> Confirmar Nueva Contraseña
+                    </label>
+                    <input type="password" id="pwd-confirma" placeholder="••••••••"
+                           onkeydown="if(event.key==='Enter') confirmarCambioPassword()"
+                           class="pwd-input">
+                </div>
+
+                <p id="pwd-error" class="pwd-error"></p>
             </div>
 
-            <div style="margin-bottom:5px;">
-                <label style="font-size:0.8rem; font-weight:700; color:#475569;
-                              text-transform:uppercase; display:block; margin-bottom:6px;">
-                    <i class="fas fa-key" style="color:#3b82f6;"></i> Confirmar Nueva Contraseña
-                </label>
-                <input type="password" id="pwd-confirma" placeholder="••••••••"
-                       onkeydown="if(event.key==='Enter') confirmarCambioPassword()"
-                       style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px;
-                              font-size:0.95rem; outline:none; box-sizing:border-box;">
+            <div class="modal-gen-footer">
+                <button onclick="cerrarModalPassword()" class="btn-modal-cancelar">Cancelar</button>
+                <button onclick="confirmarCambioPassword()" class="btn-modal-ok azul">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
             </div>
-
-            <p id="pwd-error" style="color:#ef4444; font-size:0.82rem; margin:8px 0 0 0; display:none;"></p>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding:15px 25px; background:#f8fafc; border-top:1px solid #e2e8f0;
-                    display:flex; gap:12px; justify-content:flex-end;">
-            <button onclick="cerrarModalPassword()"
-                    style="padding:10px 20px; border-radius:8px; border:1px solid #e2e8f0;
-                           background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
-                Cancelar
-            </button>
-            <button onclick="confirmarCambioPassword()"
-                    style="padding:10px 24px; border-radius:8px; border:none; background:#3b82f6;
-                           color:white; font-weight:700; cursor:pointer; font-size:1rem;
-                           display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-save"></i> Guardar
-            </button>
         </div>
     </div>
-</div>
 
-<script>
-function abrirModalPassword() {
-    document.getElementById('pwd-actual').value   = '';
-    document.getElementById('pwd-nueva').value    = '';
-    document.getElementById('pwd-confirma').value = '';
-    document.getElementById('pwd-error').style.display = 'none';
-    document.getElementById('modal-password').style.display = 'flex';
-    setTimeout(() => document.getElementById('pwd-actual').focus(), 100);
-}
-
-function cerrarModalPassword() {
-    document.getElementById('modal-password').style.display = 'none';
-}
-
-async function confirmarCambioPassword() {
-    const actual    = document.getElementById('pwd-actual').value.trim();
-    const nueva     = document.getElementById('pwd-nueva').value.trim();
-    const confirma  = document.getElementById('pwd-confirma').value.trim();
-    const errorEl   = document.getElementById('pwd-error');
-
-    if (!actual || !nueva || !confirma) {
-        errorEl.textContent = 'Todos los campos son obligatorios.';
-        errorEl.style.display = 'block';
-        return;
-    }
-
-    if (nueva !== confirma) {
-        errorEl.textContent = 'Las contraseñas nuevas no coinciden.';
-        errorEl.style.display = 'block';
-        return;
-    }
-
-    if (nueva.length < 4) {
-        errorEl.textContent = 'La contraseña debe tener al menos 4 caracteres.';
-        errorEl.style.display = 'block';
-        return;
-    }
-
-    errorEl.style.display = 'none';
-
-    try {
-        const resp = await fetch('/api/cambiar_password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                password_actual:   actual,
-                password_nueva:    nueva,
-                password_confirma: confirma
-            })
-        });
-
-        const result = await resp.json();
-
-        if (result.status === 'success') {
-            cerrarModalPassword();
-            // Alerta de éxito
-            const alerta = document.createElement('div');
-            alerta.className = 'alert-floating alert-green';
-            alerta.innerHTML = '<i class="fas fa-check-circle"></i> Contraseña actualizada correctamente';
-            document.body.appendChild(alerta);
-            setTimeout(() => {
-                alerta.style.opacity = '0';
-                setTimeout(() => alerta.remove(), 500);
-            }, 3000);
-        } else {
-            errorEl.textContent = result.message;
-            errorEl.style.display = 'block';
-        }
-
-    } catch(e) {
-        errorEl.textContent = 'Error de conexión con el servidor.';
-        errorEl.style.display = 'block';
-    }
-}
-</script>
-<footer style="text-align:center; padding:15px 20px; margin-top:30px;
-               border-top:1px solid #e2e8f0; color:#94a3b8; font-size:0.78rem;">
-    <span>EL HISTORICO &copy; 2026</span>
-    <span style="margin:0 8px; color:#e2e8f0;">|</span>
-    <span>Desarrollado por 
-        <strong style="color:#2563eb;">Sebastian Toledo</strong>
-    </span>
-    <span style="margin:0 8px; color:#e2e8f0;">|</span>
-    <span>Sistema de Gestión de Inventario</span>
-</footer>
+    <footer class="app-footer">
+        <span>EL HISTORICO &copy; 2026</span>
+        <span class="app-footer-sep">|</span>
+        <span>Desarrollado por <strong>Sebastian Toledo</strong></span>
+        <span class="app-footer-sep">|</span>
+        <span>Sistema de Gestión de Inventario</span>
+    </footer>
 </body>
 </html>

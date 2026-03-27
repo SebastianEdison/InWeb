@@ -7,35 +7,6 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
-    <style>
-        /* Ajuste para el selector de unidad */
-        .input-grupal-stock {
-            display: flex;
-            gap: 15px;
-            align-items: flex-end;
-        }
-        
-        /* El contenedor de medida nace oculto */
-        #contenedor-medida {
-            display: none; 
-            flex: 1;
-        }
-
-        #columna-cantidad {
-            flex: 2;
-            transition: all 0.3s ease;
-        }
-        
-        .select-moderno {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-            color: #333;
-            font-weight: 500;
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -109,7 +80,7 @@
                         <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
                         <input type="number" id="form_stock" placeholder="0">
                     </div>
-                    
+
                     <div class="form-group" id="contenedor-medida">
                         <label class="lbl-blue"><i class="fas fa-weight"></i> Medida</label>
                         <select id="form_unidad" class="select-moderno">
@@ -118,7 +89,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="opcion-sin-stock">
                     <label class="switch-container">
                         <input type="checkbox" id="chk_venta_libre">
@@ -130,19 +101,38 @@
                     </div>
                 </div>
             </div>
+
+            <div class="form-grid-precios">
+                <div class="form-group">
+                    <label class="lbl-orange"><i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                        <span class="lbl-opcional">(alerta)</span>
+                    </label>
+                    <input type="number" id="form_stock_minimo" placeholder="0" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-blue"><i class="fas fa-tag"></i> Categoría</label>
+                    <select id="form_categoria" class="select-moderno">
+                        <option value="General">General</option>
+                        <option value="Lácteos">Lácteos</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Panadería">Panadería</option>
+                        <option value="Carnes">Carnes</option>
+                        <option value="Limpieza">Limpieza</option>
+                        <option value="Confites">Confites</option>
+                        <option value="Frutas y Verduras">Frutas y Verduras</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="form-group-full" id="contenedor-vencimiento">
                 <label class="lbl-blue">
-                    <i class="fas fa-calendar-times"></i> Fecha de Vencimiento 
-                    <span style="color:#94a3b8; font-weight:400; text-transform:none; font-size:0.75rem;">(opcional)</span>
+                    <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
+                    <span class="lbl-opcional">(opcional)</span>
                 </label>
-                <input type="date" id="form_vencimiento"
-                    style="width:100%; padding:18px 22px; border-radius:14px; border:2px solid #e2e8f0;
-                            background-color:#f8fafc; font-size:1rem; color:#334155; outline:none;
-                            transition: all 0.3s;">
-                <small style="color:#94a3b8; margin-top:4px; display:block;">
-                    Déjalo vacío si el producto no tiene fecha de vencimiento
-                </small>
-            </div>            
+                <input type="date" id="form_vencimiento">
+                <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
+            </div>
 
             <div class="form-acciones">
                 <button type="submit" class="btn-guardar-pro">
@@ -161,13 +151,4 @@
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
-    <script>
-        // Mantener el foco en el buscador al hacer clic fuera del formulario
-        document.addEventListener('click', (e) => {
-            const search = document.getElementById('codigo_search');
-            if (search && !e.target.closest('.panel-formulario') && !search.readOnly) {
-                search.focus();
-            }
-        });
-    </script>
 {% endblock %}

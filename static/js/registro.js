@@ -1,10 +1,10 @@
-// 1. AL CARGAR: Foco inicial
+// foco inicial al cargar
 document.addEventListener('DOMContentLoaded', () => {
     const inputSearch = document.getElementById('codigo_search');
     if (inputSearch) inputSearch.focus();
 });
 
-// 2. SELECCIONAR TIPO (Código vs Peso)
+// cambiar entre modo código y modo peso
 function seleccionarTipo(tipo) {
     document.getElementById('tipo_registro_actual').value = tipo;
     
@@ -48,11 +48,10 @@ function seleccionarTipo(tipo) {
         // Foco al nombre, no al input bloqueado
         document.getElementById('form_nombre').focus();
     }
-    // ← elimna el searchInput.focus() que estaba aquí
-
 }
 
-// 3. SWITCH VENTA LIBRE
+
+// toggle venta libre
 document.getElementById('chk_venta_libre').addEventListener('change', function() {
     const inputStock = document.getElementById('form_stock');
     if (this.checked) {
@@ -66,7 +65,7 @@ document.getElementById('chk_venta_libre').addEventListener('change', function()
     }
 });
 
-// 4. GUARDAR PRODUCTO (Envío a Python)
+// guardar producto
 async function procesarIngreso(event) {
     if (event) event.preventDefault();
 
@@ -77,9 +76,8 @@ async function procesarIngreso(event) {
     const pVentaValue = document.getElementById('form_pventa').value;
     const pCompraValue = document.getElementById('form_pcompra').value;
     const stockValue = document.getElementById('form_stock').value;
-    const unidadValue = document.getElementById('form_unidad').value; // <--- CAPTURA LA UNIDAD
+    const unidadValue = document.getElementById('form_unidad').value;
 
-    // --- VALIDACIONES ---
     if (!esPeso && !codigoValue) {
         mostrarAlerta("⚠️ Escanea un código primero", "error");
         document.getElementById('codigo_search').focus();
@@ -96,15 +94,19 @@ async function procesarIngreso(event) {
         return;
     }
 
-    // Armamos el objeto JSON incluyendo la UNIDAD
+    const stockMinimoEl = document.getElementById('form_stock_minimo');
+    const categoriaEl   = document.getElementById('form_categoria');
+
     const datos = {
         codigo: esPeso ? "" : codigoValue,
         nombre: nombreValue,
         precio_compra: pCompraValue ? parseFloat(pCompraValue) : 0,
         precio_venta: parseFloat(pVentaValue),
         stock: document.getElementById('chk_venta_libre').checked ? 999999 : (parseInt(stockValue) || 0),
-        unidad: unidadValue, // <--- SE ENVÍA A PYTHON
-        fecha_vencimiento: vencimientoValue  
+        unidad: unidadValue,
+        fecha_vencimiento: vencimientoValue,
+        stock_minimo: stockMinimoEl ? (parseInt(stockMinimoEl.value) || 0) : 0,
+        categoria: categoriaEl ? categoriaEl.value : 'General'
     };
 
     try {
@@ -128,7 +130,7 @@ async function procesarIngreso(event) {
     }
 }
 
-// 5. ALERTAS Y RESET
+// alertas y reseteo del formulario
 function mostrarAlerta(mensaje, tipo) {
     const alerta = document.createElement('div');
     alerta.className = `alert-floating ${tipo === 'success' ? 'alert-green' : 'alert-red'}`;
@@ -147,7 +149,7 @@ function resetearTodo() {
     seleccionarTipo('codigo');
 }
 
-// 6. BUSCAR DATOS DEL PRODUCTO
+// buscar datos del producto por código
 async function buscarDatosProducto() {
     const codigoInput = document.getElementById('codigo_search');
     const codigo = codigoInput.value.trim();
@@ -155,7 +157,6 @@ async function buscarDatosProducto() {
     if (!codigo || codigo === "AUTO-GENERADO") return;
 
     try {
-        // Usamos 'busqueda' porque recordamos que 'q' ahora es 'busqueda'
         const response = await fetch(`/buscar_producto?busqueda=${codigo}`);
         const productos = await response.json();
 
@@ -165,7 +166,6 @@ async function buscarDatosProducto() {
             document.getElementById('form_pcompra').value = data.costo || "";
             document.getElementById('form_pventa').value = data.precio_venta || "";
             
-            // Si el producto ya tiene una unidad guardada, la seleccionamos
             if(data.unidad) document.getElementById('form_unidad').value = data.unidad;
 
             mostrarAlerta("📦 Producto encontrado", "success");
@@ -181,10 +181,18 @@ async function buscarDatosProducto() {
     }
 }
 
-// 7. DETECTOR DE ENTER (PISTOLA)
+// enter en el scanner dispara búsqueda
 document.getElementById('codigo_search').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         buscarDatosProducto();
+    }
+});
+
+// mantener foco en el scanner al hacer clic fuera del formulario
+document.addEventListener('click', (e) => {
+    const search = document.getElementById('codigo_search');
+    if (search && !e.target.closest('.panel-formulario') && !search.readOnly) {
+        search.focus();
     }
 });

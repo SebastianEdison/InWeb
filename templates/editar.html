@@ -3,20 +3,17 @@
 {% block title %}Editar Producto - EL HISTORICO{% endblock %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 30px auto; padding: 0 20px;">
+<div class="editar-wrapper">
 
-    <div style="margin-bottom: 25px;">
-        <h1 style="font-size: 1.6rem; color: #1e293b; font-weight: 800; margin:0 0 6px 0;">
-            ✏️ Editar Producto
-        </h1>
-        <p style="color: #64748b; margin:0;">Modifica los datos del producto y guarda los cambios.</p>
+    <div class="editar-encabezado">
+        <h1>✏️ Editar Producto</h1>
+        <p>Modifica los datos del producto y guarda los cambios.</p>
     </div>
 
-    <div style="background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    <div class="editar-card">
         <form action="/actualizar" method="POST">
             <input type="hidden" name="id" value="{{ p['id'] }}">
 
-            <!-- Nombre -->
             <div class="form-group">
                 <label class="lbl-blue">
                     <i class="fas fa-tag"></i> Nombre del Producto
@@ -25,13 +22,12 @@
                        placeholder="Ej: Leche entera 1L">
             </div>
 
-            <!-- Precios -->
             <div class="form-row">
                 <div class="form-group">
                     <label class="lbl-green">
                         <i class="fas fa-arrow-down"></i> Precio Costo ($)
                     </label>
-                    <input type="number" name="costo" 
+                    <input type="number" name="costo"
                            value="{{ p['costo'] | int }}" required
                            placeholder="0">
                 </div>
@@ -39,57 +35,70 @@
                     <label class="lbl-orange">
                         <i class="fas fa-arrow-up"></i> Precio Venta ($)
                     </label>
-                    <input type="number" name="precio" 
+                    <input type="number" name="precio"
                            value="{{ p['precio_venta'] | int }}" required
                            placeholder="0">
                 </div>
             </div>
 
-            <!-- Stock y Unidad -->
             <div class="form-row">
                 <div class="form-group">
                     <label class="lbl-purple">
                         <i class="fas fa-boxes"></i> Stock Actual
                     </label>
-                    <input type="number" name="stock" 
+                    <input type="number" name="stock"
                            value="{{ p['stock'] }}" required
                            placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label class="lbl-blue">
-                        <i class="fas fa-weight"></i> Unidad de Venta
+                    <label class="lbl-orange">
+                        <i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                        <span class="lbl-opcional">(alerta)</span>
                     </label>
-                    <select name="unidad"
-                            style="width:100%; padding:14px; border:2px solid #edf2f7;
-                                   border-radius:12px; font-size:1rem; background:#f8fafc;
-                                   color:#1e293b; outline:none; transition: all 0.2s ease;
-                                   cursor:pointer;"
-                            onfocus="this.style.borderColor='#3b82f6'"
-                            onblur="this.style.borderColor='#edf2f7'">
-                        <option value="Unidad" {{ 'selected' if p['unidad'] == 'Unidad' }}>Unidad</option>
-                        <option value="Kg"     {{ 'selected' if p['unidad'] == 'Kg' }}>Kilogramo (Kg)</option>
-                    </select>
-                    <div class="form-group">
-                        <label class="lbl-blue">
-                            <i class="fas fa-calendar-times"></i> Fecha Vencimiento
-                            <span style="color:#94a3b8; font-weight:400; text-transform:none; font-size:0.75rem;">(opcional)</span>
-                        </label>
-                        <input type="date" name="fecha_vencimiento"
-                            value="{{ p['fecha_vencimiento'] if p['fecha_vencimiento'] else '' }}"
-                            style="width:100%; padding:14px; border:2px solid #edf2f7; border-radius:12px;
-                                    font-size:1rem; background:#f8fafc; color:#1e293b; outline:none;">
-                    </div>                    
+                    <input type="number" name="stock_minimo"
+                           value="{{ p['stock_minimo'] if p['stock_minimo'] else 0 }}"
+                           placeholder="0" min="0">
                 </div>
             </div>
 
-            <!-- Botones -->
-            <div style="display:flex; gap:12px; margin-top:10px;">
-                <button type="submit" class="btn-save-modern" style="flex:2;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-weight"></i> Unidad de Venta
+                    </label>
+                    <select name="unidad">
+                        <option value="Unidad" {{ 'selected' if p['unidad'] == 'Unidad' }}>Unidad</option>
+                        <option value="Kg"     {{ 'selected' if p['unidad'] == 'Kg' }}>Kilogramo (Kg)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-tag"></i> Categoría
+                    </label>
+                    <select name="categoria">
+                        {% for cat in ['General','Lácteos','Bebidas','Panadería','Carnes','Limpieza','Confites','Frutas y Verduras','Otro'] %}
+                        <option value="{{ cat }}" {{ 'selected' if (p['categoria'] or 'General') == cat }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-calendar-times"></i> Fecha Vencimiento
+                        <span class="lbl-opcional">(opcional)</span>
+                    </label>
+                    <input type="date" name="fecha_vencimiento"
+                        value="{{ p['fecha_vencimiento'] if p['fecha_vencimiento'] else '' }}">
+                </div>
+            </div>
+
+            <div class="editar-acciones">
+                <button type="submit" class="btn-save-modern">
                     <i class="fas fa-check-circle"></i> Guardar Cambios
                 </button>
-                <a href="/" class="btn-cancel-modern" 
-                   style="flex:1; display:flex; align-items:center; justify-content:center; 
-                          text-decoration:none;">
+                <a href="/" class="btn-cancel-modern">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
             </div>

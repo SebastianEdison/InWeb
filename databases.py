@@ -142,19 +142,62 @@ def crear_tablas():
             INSERT OR IGNORE INTO configuracion (clave, valor) 
             VALUES (?, ?)
         """, (clave, valor))
-    try: 
+    try:
         cursor.execute("ALTER TABLE productos ADD COLUMN fecha_vencimiento TEXT DEFAULT NULL")
-    except: 
+    except:
         pass
+
+    # Feature 1: stock mínimo por producto
+    try:
+        cursor.execute("ALTER TABLE productos ADD COLUMN stock_minimo INTEGER DEFAULT 0")
+    except:
+        pass
+
+    # Feature 2: categoría de producto
+    try:
+        cursor.execute("ALTER TABLE productos ADD COLUMN categoria TEXT DEFAULT 'General'")
+    except:
+        pass
+
+    # Feature 3: descuento en ventas
+    try:
+        cursor.execute("ALTER TABLE ventas ADD COLUMN descuento REAL DEFAULT 0")
+    except:
+        pass
+
+    # Feature 5: anulación de ventas
+    try:
+        cursor.execute("ALTER TABLE ventas ADD COLUMN anulada INTEGER DEFAULT 0")
+    except:
+        pass
+
+    # Feature 6: motivo en movimientos de stock
+    try:
+        cursor.execute("ALTER TABLE movimientos_stock ADD COLUMN motivo TEXT")
+    except:
+        pass
+
+    # Feature 7: tabla de proveedores
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS proveedores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            rut TEXT,
+            telefono TEXT,
+            email TEXT,
+            notas TEXT,
+            activo INTEGER DEFAULT 1
+        )
+    ''')
 
     conexion.commit()
     conexion.close()
 
-def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None):
+def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None, stock_minimo=0, categoria='General'):
     conexion = conectar()
-    conexion.row_factory = sqlite3.Row 
+    conexion.row_factory = sqlite3.Row
     cursor = conexion.cursor()
-    
+
     try:
         cursor.execute("SELECT id, stock FROM productos WHERE codigo_barra = ?", (codigo,))
         existente = cursor.fetchone()
@@ -163,19 +206,19 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
             id_producto = existente['id']
             stock_actual = existente['stock']
             nuevo_total = stock_actual + int(stock)
-            
+
             cursor.execute("""
-                UPDATE productos 
-                SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?
+                UPDATE productos
+                SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?
                 WHERE id=?
-            """, (nombre, precio, costo, nuevo_total, unidad, fecha_vencimiento, id_producto))
+            """, (nombre, precio, costo, nuevo_total, unidad, fecha_vencimiento, stock_minimo, categoria, id_producto))
             print(f"✅ Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
-            
+
         else:
             cursor.execute("""
-                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad, fecha_vencimiento)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (codigo, nombre, precio, costo, stock, unidad, fecha_vencimiento))
+                INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad, fecha_vencimiento, stock_minimo, categoria)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (codigo, nombre, precio, costo, stock, unidad, fecha_vencimiento, stock_minimo, categoria))
             print(f"✨ Nuevo producto '{nombre}' registrado")
 
         conexion.commit()
@@ -186,29 +229,36 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
     finally:
         conexion.close()
             
-def obtener_productos(nombre_buscar=None):
+def obtener_productos(nombre_buscar=None, categoria=None):
     conexion = conectar()
-    conexion.row_factory =sqlite3.Row
+    conexion.row_factory = sqlite3.Row
     cursor = conexion.cursor()
 
     try:
+        condiciones = []
+        params = []
+
         if nombre_buscar:
-            param =f"%{nombre_buscar}%"
-            #Buscamos por nombre o por codigo de baara con LIKE            
-            sql= "SELECT * FROM productos WHERE (nombre LIKE ? or codigo_barra LIKE ?)"            
-            cursor.execute(sql,(param, param))
-        
-        else:
-            sql ="SELECT * FROM productos"
-            cursor.execute(sql)
-        
+            condiciones.append("(nombre LIKE ? OR codigo_barra LIKE ?)")
+            param = f"%{nombre_buscar}%"
+            params.extend([param, param])
+
+        if categoria:
+            condiciones.append("categoria = ?")
+            params.append(categoria)
+
+        sql = "SELECT * FROM productos"
+        if condiciones:
+            sql += " WHERE " + " AND ".join(condiciones)
+
+        cursor.execute(sql, params)
         resultados = cursor.fetchall()
         return resultados
-    
+
     except sqlite3.Error as e:
         print(f"Error en la consulta: {e}")
-        return[]
-    
+        return []
+
     finally:
         if conexion:
             conexion.close()
@@ -236,16 +286,16 @@ def buscar_producto_por_codigo(codigo):
         if conexion:
             conexion.close()
 
-def modificar_stock(producto_id, cantidad_cambio):
+def modificar_stock(producto_id, cantidad_cambio, motivo=None):
     conexion = None
     try:
         conexion = conectar()
         cursor = conexion.cursor()
 
-        # 1. Verificamos stock actual y nombre
+        # verificamos stock actual y nombre
         cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (producto_id,))
         resultado = cursor.fetchone()
-        
+
         if not resultado:
             return False, "Producto no existe"
 
@@ -253,31 +303,28 @@ def modificar_stock(producto_id, cantidad_cambio):
         nombre_prod = resultado[1]
         nuevo_stock = stock_actual + cantidad_cambio
 
-        # 2. Protección: No permitir stock negativo
         if nuevo_stock < 0:
             return False, f"Error: Solo hay {stock_actual} unidades de {nombre_prod}."
 
-        # 3. Actualizamos la tabla de productos
         cursor.execute("UPDATE productos SET stock = ? WHERE id = ?", (nuevo_stock, producto_id))
-        
-        # 4. Registramos el movimiento en la tabla movimientos_stock (Kardex)
+
         tipo_mov = "ENTRADA" if cantidad_cambio > 0 else "VENTA"
         cursor.execute("""
-            INSERT INTO movimientos_stock (producto_id, tipo, cantidad)
-            VALUES (?, ?, ?)
-        """, (producto_id, tipo_mov, abs(cantidad_cambio)))
+            INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo)
+            VALUES (?, ?, ?, ?)
+        """, (producto_id, tipo_mov, abs(cantidad_cambio), motivo))
 
         conexion.commit()
         print(f"Stock de {nombre_prod} actualizado: {nuevo_stock} unidades.")
         return True, "Éxito"
-        
+
     except sqlite3.Error as e:
         if conexion: conexion.rollback()
         return False, f"Error DB: {e}"
     finally:
         if conexion: conexion.close()
 
-def registrar_venta(carrito, metodo_pago="Efectivo", forzar= False):
+def registrar_venta(carrito, metodo_pago="Efectivo", forzar=False, descuento=0):
     conexion = None
     try:
         conexion = conectar()
@@ -311,8 +358,8 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar= False):
         # 3. INSERTAR CABECERA (Ventas)
         tz_chile = pytz.timezone('America/Santiago')
         fecha_chile = datetime.now(tz_chile).strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute("INSERT INTO ventas (total, metodo_pago, fecha) VALUES (?, ?, ?)", 
-                (total_venta, metodo_pago, fecha_chile))
+        cursor.execute("INSERT INTO ventas (total, metodo_pago, fecha, descuento) VALUES (?, ?, ?, ?)",
+                (total_venta, metodo_pago, fecha_chile, descuento))
         venta_id = cursor.lastrowid 
 
         # 4. PROCESAR PRODUCTOS
@@ -331,8 +378,8 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar= False):
             
             # Registro en Kardex (Movimientos)
             cursor.execute("""
-                INSERT INTO movimientos_stock (producto_id, tipo, cantidad)
-                VALUES (?, 'VENTA', ?)
+                INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo)
+                VALUES (?, 'VENTA', ?, NULL)
             """, (item['id'], item['cantidad']))
 
         # 5. COMMIT FINAL (Solo se guarda si nada falló arriba)
@@ -386,15 +433,15 @@ def probar_sistema():
 
     print("\n --- PRUEBAS FINALIZADAS ---")
 
-def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None):
+def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad', fecha_vencimiento=None, stock_minimo=0, categoria='General'):
     conexion = conectar()
     cursor = conexion.cursor()
     try:
         cursor.execute("""
-            UPDATE productos 
-            SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?
+            UPDATE productos
+            SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?
             WHERE id=?
-        """, (nombre, precio, costo, stock, unidad, fecha_vencimiento, id_p))
+        """, (nombre, precio, costo, stock, unidad, fecha_vencimiento, stock_minimo, categoria, id_p))
         conexion.commit()
         return True
     except sqlite3.Error as e:
@@ -808,6 +855,104 @@ def generar_excel_dia(fecha):
     wb.save(output)
     output.seek(0)
     return output
+
+# Feature 5: anular venta
+def anular_venta_db(venta_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT anulada FROM ventas WHERE id = ?", (venta_id,))
+    v = cursor.fetchone()
+    if not v or v['anulada']:
+        conn.close()
+        return False, "Venta no encontrada o ya anulada"
+    cursor.execute("SELECT producto_id, cantidad FROM detalle_venta WHERE venta_id = ?", (venta_id,))
+    items = cursor.fetchall()
+    for item in items:
+        cursor.execute("UPDATE productos SET stock = stock + ? WHERE id = ?", (item['cantidad'], item['producto_id']))
+        cursor.execute("INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo) VALUES (?, 'ANULACION', ?, 'Anulación venta #' || ?)",
+                       (item['producto_id'], item['cantidad'], venta_id))
+    cursor.execute("UPDATE ventas SET anulada = 1 WHERE id = ?", (venta_id,))
+    conn.commit()
+    conn.close()
+    return True, "Venta anulada"
+
+
+# Feature 6: historial de movimientos de stock
+def obtener_historial_stock_db(limite=100):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT m.id, m.tipo, m.cantidad, m.fecha, m.motivo,
+               p.nombre as producto_nombre, p.codigo_barra
+        FROM movimientos_stock m
+        JOIN productos p ON p.id = m.producto_id
+        ORDER BY m.id DESC
+        LIMIT ?
+    """, (limite,))
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+
+def ajuste_manual_stock_db(producto_id, cantidad, motivo='Ajuste manual'):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (producto_id,))
+    p = cursor.fetchone()
+    if not p:
+        conn.close()
+        return False, "Producto no encontrado"
+    nuevo_stock = p['stock'] + cantidad
+    if nuevo_stock < 0:
+        conn.close()
+        return False, f"Stock insuficiente. Stock actual: {p['stock']}"
+    cursor.execute("UPDATE productos SET stock = ? WHERE id = ?", (nuevo_stock, producto_id))
+    tipo = 'ENTRADA' if cantidad > 0 else 'SALIDA'
+    cursor.execute("INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo) VALUES (?, ?, ?, ?)",
+                   (producto_id, tipo, abs(cantidad), motivo))
+    conn.commit()
+    conn.close()
+    return True, f"Stock actualizado: {nuevo_stock}"
+
+
+# Feature 7: proveedores
+def obtener_proveedores_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM proveedores WHERE activo = 1 ORDER BY nombre")
+    columnas = [c[0] for c in cursor.description]
+    resultados = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+
+def guardar_proveedor_db(datos):
+    conn = conectar()
+    cursor = conn.cursor()
+    if datos.get('id'):
+        cursor.execute("""
+            UPDATE proveedores SET nombre=?, rut=?, telefono=?, email=?, notas=?
+            WHERE id=?
+        """, (datos['nombre'], datos.get('rut', ''), datos.get('telefono', ''),
+              datos.get('email', ''), datos.get('notas', ''), datos['id']))
+    else:
+        cursor.execute("""
+            INSERT INTO proveedores (nombre, rut, telefono, email, notas)
+            VALUES (?, ?, ?, ?, ?)
+        """, (datos['nombre'], datos.get('rut', ''), datos.get('telefono', ''),
+              datos.get('email', ''), datos.get('notas', '')))
+    conn.commit()
+    conn.close()
+
+
+def eliminar_proveedor_db(proveedor_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE proveedores SET activo = 0 WHERE id = ?", (proveedor_id,))
+    conn.commit()
+    conn.close()
+
 
 def obtener_productos_por_vencer(dias=7):
     conn = conectar()

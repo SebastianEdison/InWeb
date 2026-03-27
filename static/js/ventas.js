@@ -1,10 +1,14 @@
-// ventas.js
+// config del negocio cargada al inicio para la boleta
+let _configNegocio = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-ventas');
     const listaSugerencias = document.getElementById('lista-sugerencias');
     const inputRecibido = document.getElementById('monto-recibido');
     let timeoutBusqueda;
+
+    // cargar config para boleta
+    fetch('/api/obtener_config').then(r => r.json()).then(d => { _configNegocio = d; }).catch(() => {});
 
     actualizarInterfazVentas();
 
@@ -71,9 +75,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (inputRecibido) inputRecibido.addEventListener('input', calcularVuelto);
+
+    // listeners de descuento
+    const descValor = document.getElementById('descuento-valor');
+    const descTipo  = document.getElementById('descuento-tipo');
+    if (descValor) descValor.addEventListener('input', actualizarTotalesGenerales);
+    if (descTipo)  descTipo.addEventListener('change', actualizarTotalesGenerales);
+
+    // listeners boleta
+    const btnCerrarBoleta = document.getElementById('btn-cerrar-boleta');
+    const btnCerrarBoletaFooter = document.getElementById('btn-cerrar-boleta-footer');
+    const btnImprimirBoleta = document.getElementById('btn-imprimir-boleta');
+    if (btnCerrarBoleta) btnCerrarBoleta.addEventListener('click', cerrarModalBoleta);
+    if (btnCerrarBoletaFooter) btnCerrarBoletaFooter.addEventListener('click', cerrarModalBoleta);
+    if (btnImprimirBoleta) btnImprimirBoleta.addEventListener('click', () => window.print());
 });
 
-// -- interfaz indicadores topbar --
+// indicadores de caja en topbar
 function actualizarInterfazVentas() {
     const totalDia      = localStorage.getItem('venta_total_dia') || "0";
     const totalEfectivo = localStorage.getItem('total_efectivo')  || "0";
@@ -91,7 +109,7 @@ function actualizarInterfazVentas() {
     if (elOtros)     elOtros.textContent     = `$${parseInt(totalOtros).toLocaleString('es-CL')}`;
 }
 
-// -- carrito de ventas --
+// carrito
 function agregarAlCarrito(p) {
     if (p.unidad === 'Kg') {
         abrirModalPeso(p);
@@ -102,7 +120,7 @@ function agregarAlCarrito(p) {
     let filaExistente = document.querySelector(`tr[data-id="${p.id}"]`);
     let forzado = false;
 
-    // Alerta si el stock no alcanza
+    // stock insuficiente
     if (p.stock !== undefined && p.stock !== 999999) {
         const cantidadActual = filaExistente
             ? parseInt(filaExistente.querySelector('.celda-cantidad').textContent)
@@ -157,7 +175,7 @@ function agregarAlCarrito(p) {
     guardarEstadoCarrito();
 }
 
-// -- modal monto productos por kg --
+// modal de peso (productos por kg)
 let _productoKgPendiente = null;
 
 function abrirModalPeso(producto) {
@@ -228,7 +246,7 @@ function confirmarProductoPeso() {
     cerrarModalPeso();
 }
 
-// -- modal fiado --
+// modal fiado
 function abrirModalFiado() {
     const total = document.getElementById('gran-total').textContent;
     if (total === "$0") {
@@ -300,6 +318,7 @@ async function confirmarFiado() {
             actualizarTotalesGenerales();
             cerrarModalFiado();
             mostrarAlertaVenta(`✅ Fiado de ${nombre} registrado por $${monto.toLocaleString('es-CL')}`);
+            document.getElementById('buscador-ventas').focus();
         } else {
             mostrarAlertaVenta(`❌ ${result.message}`, 'error');
         }
@@ -312,7 +331,7 @@ async function confirmarFiado() {
     }
 }
 
-// -- modal cierre de caja --
+// modal cierre de caja
 function solicitarCierreTurno() {
     const efectivo = parseInt(localStorage.getItem('total_efectivo') || 0);
     const tarjeta  = parseInt(localStorage.getItem('total_tarjeta')  || 0);
@@ -371,7 +390,7 @@ async function confirmarCierreCaja() {
     }
 }
 
-// -- controles de cantidad en tabla --
+// controles de cantidad
 function cambiarCantidad(btn, delta, precioBase, stock) {
     const fila = btn.closest('tr');
     const span = fila.querySelector('.celda-cantidad');
@@ -413,16 +432,44 @@ function eliminarFila(btn) {
 }
 
 function actualizarTotalesGenerales() {
-    let granTotal = 0;
+    let subtotal = 0;
     document.querySelectorAll('.celda-total-fila').forEach(celda => {
-        granTotal += parseInt(celda.textContent.replace(/[^0-9]/g, "")) || 0;
+        subtotal += parseInt(celda.textContent.replace(/[^0-9]/g, "")) || 0;
     });
-    document.getElementById('gran-total').textContent  = `$${granTotal.toLocaleString('es-CL')}`;
-    document.getElementById('total-neto').textContent  = `$${Math.round(granTotal / 1.19).toLocaleString('es-CL')}`;
-    document.getElementById('total-iva').textContent   = `$${(granTotal - Math.round(granTotal / 1.19)).toLocaleString('es-CL')}`;
+
+    // calcular descuento
+    const descValorEl = document.getElementById('descuento-valor');
+    const descTipoEl  = document.getElementById('descuento-tipo');
+    const filaDesc    = document.getElementById('fila-descuento-calculado');
+    const descCalcEl  = document.getElementById('descuento-calculado');
+
+    let montoDescuento = 0;
+    if (descValorEl && descTipoEl) {
+        const val  = parseFloat(descValorEl.value) || 0;
+        const tipo = descTipoEl.value;
+        if (val > 0) {
+            montoDescuento = tipo === 'pct' ? Math.round(subtotal * val / 100) : Math.round(val);
+            montoDescuento = Math.min(montoDescuento, subtotal);
+        }
+    }
+
+    const granTotal = subtotal - montoDescuento;
+
+    if (filaDesc && descCalcEl) {
+        if (montoDescuento > 0) {
+            filaDesc.style.display = 'flex';
+            descCalcEl.textContent = `-$${montoDescuento.toLocaleString('es-CL')}`;
+        } else {
+            filaDesc.style.display = 'none';
+        }
+    }
+
+    document.getElementById('gran-total').textContent = `$${granTotal.toLocaleString('es-CL')}`;
+    document.getElementById('total-neto').textContent = `$${Math.round(granTotal / 1.19).toLocaleString('es-CL')}`;
+    document.getElementById('total-iva').textContent  = `$${(granTotal - Math.round(granTotal / 1.19)).toLocaleString('es-CL')}`;
 }
 
-// -- guardar y reconstruir carrito en localStorage --
+// guardar y recuperar carrito desde localStorage
 function guardarEstadoCarrito() {
     const productos = [];
     document.querySelectorAll('#cuerpo-tabla-ventas tr').forEach(fila => {
@@ -454,16 +501,14 @@ function reconstruirCarritoDesdeStorage(productos) {
     productos.forEach(p => agregarAlCarrito(p));
 }
 
-// -- procesar pago y registrar venta en backend --
+// procesar pago
 async function procesarVentaFinal() {
     const totalTexto = document.getElementById('modal-total-grande').textContent;
     const totalVenta = parseInt(totalTexto.replace(/[^0-9]/g, ""));
     const metodo     = document.getElementById('metodo-seleccionado').value;
 
-    // Verificar si hay productos con stock forzado
     const hayForzado = document.querySelectorAll('#cuerpo-tabla-ventas tr[data-forzado="true"]').length > 0;
 
-    // Validar monto en efectivo
     if (metodo === 'efectivo') {
         const recibido = parseInt(document.getElementById('monto-recibido').value) || 0;
         if (recibido < totalVenta) {
@@ -490,11 +535,31 @@ async function procesarVentaFinal() {
     const btnConfirmar = document.querySelector('.btn-finalizar-venta');
     if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.textContent = 'Procesando...'; }
 
+    // calcular descuento para enviar al servidor
+    const descValorEl = document.getElementById('descuento-valor');
+    const descTipoEl  = document.getElementById('descuento-tipo');
+    let montoDescuento = 0;
+    if (descValorEl && descTipoEl) {
+        const val  = parseFloat(descValorEl.value) || 0;
+        const tipo = descTipoEl.value;
+        if (val > 0) {
+            const subtotalBruto = totalVenta + (tipo === 'pct'
+                ? Math.round(totalVenta / (1 - val / 100)) - totalVenta
+                : Math.round(val));
+            montoDescuento = tipo === 'pct'
+                ? Math.round(subtotalBruto * val / 100)
+                : Math.round(val);
+        }
+    }
+
+    // capturar items del carrito para la boleta antes de limpiar
+    const carritoParaBoleta = carrito.slice();
+
     try {
         const response = await fetch('/api/registrar_venta', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ carrito, metodo_pago: metodo, forzar: hayForzado })
+            body: JSON.stringify({ carrito, metodo_pago: metodo, forzar: hayForzado, descuento: montoDescuento })
         });
 
         const result = await response.json();
@@ -503,16 +568,17 @@ async function procesarVentaFinal() {
             actualizarIndicadoresPersistentes(totalVenta, metodo);
             localStorage.removeItem('carrito_actual');
             document.getElementById('cuerpo-tabla-ventas').innerHTML = "";
+            // limpiar descuento
+            if (descValorEl) descValorEl.value = '';
             actualizarTotalesGenerales();
             cerrarModal();
-            mostrarAlertaVenta(`✅ Venta #${result.venta_id} registrada con éxito`);
+            mostrarBoleta(result.venta_id, carritoParaBoleta, totalVenta, metodo);
         } else {
             cerrarModal();
             mostrarAlertaVenta(`❌ ${result.message}`, 'error');
         }
 
     } catch (error) {
-        console.error("Error al registrar venta:", error);
         cerrarModal();
         mostrarAlertaVenta('❌ Error de conexión con el servidor', 'error');
     } finally {
@@ -553,6 +619,7 @@ function cerrarModal() {
     document.getElementById('modal-cobro').style.display = 'none';
     const btnConfirmar = document.querySelector('.btn-finalizar-venta');
     if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = 'CONFIRMAR COBRO'; }
+    document.getElementById('buscador-ventas').focus();
 }
 
 function calcularVuelto() {
@@ -569,4 +636,73 @@ function seleccionarMetodo(el, m) {
     el.classList.add('active');
     document.getElementById('metodo-seleccionado').value = m;
     document.getElementById('seccion-efectivo').style.display = m === 'efectivo' ? 'block' : 'none';
+}
+
+function cancelarVenta() {
+    if (confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
+        document.getElementById('cuerpo-tabla-ventas').innerHTML = '';
+        actualizarTotalesGenerales();
+        document.getElementById('buscador-ventas').focus();
+    }
+}
+
+// boleta imprimible
+function mostrarBoleta(ventaId, carrito, total, metodo) {
+    const negocio = _configNegocio.nombre_negocio || 'EL HISTORICO';
+    const rut     = _configNegocio.rut_negocio || '';
+    const ahora   = new Date();
+    const fecha   = ahora.toLocaleDateString('es-CL');
+    const hora    = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+    const metodoIconos = { efectivo: '💵 Efectivo', tarjeta: '💳 Tarjeta', otros: '📱 Otros' };
+    const metodoTexto  = metodoIconos[metodo] || metodo;
+
+    let filas = '';
+    carrito.forEach(item => {
+        filas += `<tr class="boleta-fila">
+            <td class="boleta-td-nombre">${item.nombre || ('Producto #' + item.id)}</td>
+            <td class="boleta-td-cant">${item.cantidad}</td>
+            <td class="boleta-td-total">$${(item.precio * item.cantidad).toLocaleString('es-CL')}</td>
+        </tr>`;
+    });
+
+    const recibido = parseInt(document.getElementById('monto-recibido')?.value) || 0;
+    const vuelto   = metodo === 'efectivo' && recibido > 0 ? recibido - total : 0;
+
+    let vueltoHtml = '';
+    if (vuelto > 0) {
+        vueltoHtml = `<div class="boleta-vuelto">Vuelto: <strong>$${vuelto.toLocaleString('es-CL')}</strong></div>`;
+    }
+
+    document.getElementById('boleta-contenido').innerHTML = `
+        <div class="boleta-header">
+            <h3>${negocio}</h3>
+            ${rut ? '<p>' + rut + '</p>' : ''}
+            <p>${fecha} ${hora}</p>
+        </div>
+        <div class="boleta-num">Venta #${ventaId}</div>
+        <table class="boleta-tabla">
+            <thead><tr>
+                <th class="boleta-td-nombre">Producto</th>
+                <th class="boleta-td-cant">Cant.</th>
+                <th class="boleta-td-total">Total</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+        </table>
+        <div class="boleta-total">
+            <span>TOTAL</span>
+            <strong>$${total.toLocaleString('es-CL')}</strong>
+        </div>
+        <div class="boleta-metodo">${metodoTexto}</div>
+        ${vueltoHtml}
+        <div class="boleta-footer">¡Gracias por su compra!</div>
+    `;
+
+    document.getElementById('modal-boleta').style.display = 'flex';
+}
+
+function cerrarModalBoleta() {
+    document.getElementById('modal-boleta').style.display = 'none';
+    document.getElementById('buscador-ventas').focus();
+    mostrarAlertaVenta('✅ Venta registrada con éxito');
 }

@@ -22,16 +22,24 @@
 
         <section class="search-section">
             <form action="/" method="GET" class="search-form">
-                <input type="text" name="busqueda" placeholder="Escanear o buscar producto..." 
+                <input type="text" name="busqueda" placeholder="Escanear o buscar producto..."
                        value="{{ busqueda }}" autofocus>
                 <button type="submit" class="btn-search">🔍 Buscar</button>
                 <a href="/?bajo_stock=1" class="btn-alert">
                     ⚠️ Stock Bajo ({{ alertas }})
                 </a>
-                {% if busqueda or filtrado_bajo %}
+                {% if busqueda or filtrado_bajo or categoria_activa %}
                     <a href="/" class="btn-ver-todo">📋 Mostrar todo</a>
                 {% endif %}
             </form>
+            {% if categorias %}
+            <div class="categoria-filtros">
+                <a href="/" class="categoria-pill {{ 'activo' if not categoria_activa }}">Todas</a>
+                {% for cat in categorias %}
+                <a href="/?categoria={{ cat }}" class="categoria-pill {{ 'activo' if cat == categoria_activa }}">{{ cat }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
         </section>
 
         <ul class="responsive-table">
@@ -42,19 +50,19 @@
                 <div class="col col-4">Stock</div>
                 <div class="col col-5"></div>
             </li>
-            
+
             {% for p in lista %}
             <li class="table-row">
                 <div class="col col-1" data-label="Código">{{ p['codigo_barra'] }}</div>
                 <div class="col col-2" data-label="Nombre">{{ p['nombre'] }}</div>
                 <div class="col col-3" data-label="Precio">${{ p['precio_venta'] | int }}</div>
-                <div class="col col-4 {{ 'stock-bajo' if p['stock'] <= 3 else '' }}" data-label="Stock">
+                <div class="col col-4 {{ 'stock-bajo' if p['stock_minimo'] and p['stock'] <= p['stock_minimo'] else '' }}" data-label="Stock">
                     {{ p['stock'] }}
                 </div>
                 <div class="col col-5" data-label="Acciones">
                     <div class="action-buttons">
                         <a href="/editar/{{ p['id'] }}" class="btn-mini btn-editar">✏️</a>
-                        <button type="button" class="btn-mini btn-eliminar" 
+                        <button type="button" class="btn-mini btn-eliminar"
                                 onclick="abrirModalEliminar('{{ p.id }}', '{{ p.nombre }}')">
                             🗑️
                         </button>
@@ -65,14 +73,14 @@
         </ul>
     </div>
 
-    <div id="modalEliminar" class="modal-overlay" style="display: none;">
+    <div id="modalEliminar" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-icon">⚠️</div>
             <h2>¿Estás seguro?</h2>
             <p>Borrarás: <strong><span id="nombreProductoEliminar"></span></strong></p>
             <div class="modal-buttons">
                 <button onclick="cerrarModal()" class="btn-modal-cancel">No, mantener</button>
-                <form id="formEliminar" method="POST" style="display: inline;">
+                <form id="formEliminar" method="POST" class="form-inline">
                     <button type="submit" class="btn-modal-confirm">Sí, eliminar todo</button>
                 </form>
             </div>
@@ -81,23 +89,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    function abrirModalEliminar(id, nombre) {
-        document.getElementById('nombreProductoEliminar').innerText = nombre;
-        document.getElementById('formEliminar').action = '/eliminar/' + id;
-        document.getElementById('modalEliminar').style.display = 'flex';
-    }
-    function cerrarModal() { document.getElementById('modalEliminar').style.display = 'none'; }
-    
-    // El script del flash message también va aquí
-    window.onload = function() {
-        const flashMessage = document.getElementById('flash-message');
-        if (flashMessage) {
-            setTimeout(function() {
-                flashMessage.style.opacity = "0";
-                setTimeout(function() { flashMessage.remove(); }, 600);
-            }, 3000); 
-        }
-    };
-</script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

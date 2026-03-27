@@ -281,3 +281,105 @@ input:checked + .slider:before {
     color: #1e293b;
     border-color: #cbd5e1;
 }
+
+/* --- STOCK: fila con cantidad y selector de unidad --- */
+.input-grupal-stock {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+#contenedor-medida {
+    display: none;
+    flex: 1;
+}
+
+#columna-cantidad {
+    flex: 2;
+    transition: all 0.3s ease;
+}
+
+.select-moderno {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    color: #333;
+    font-weight: 500;
+}
+
+/* --- CAMPO FECHA DE VENCIMIENTO --- */
+#form_vencimiento {
+    width: 100%;
+    padding: 18px 22px;
+    border-radius: 14px;
+    border: 2px solid #e2e8f0;
+    background-color: #f8fafc;
+    font-size: 1rem;
+    color: #334155;
+    outline: none;
+    transition: all 0.3s;
+}
+
+/* texto de ayuda bajo el campo */
+.form-group-full small {
+    color: #94a3b8;
+    margin-top: 4px;
+    display: block;
+}
+
+/* etiqueta "opcional" en labels */
+.lbl-opcional {
+    color: #94a3b8;
+    font-weight: 400;
+    text-transform: none;
+    font-size: 0.75rem;
+}
+
+/* --- PÁGINA EDITAR PRODUCTO --- */
+.editar-wrapper {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.editar-encabezado {
+    margin-bottom: 25px;
+}
+
+.editar-encabezado h1 {
+    font-size: 1.6rem;
+    color: #1e293b;
+    font-weight: 800;
+    margin: 0 0 6px 0;
+}
+
+.editar-encabezado p {
+    color: #64748b;
+    margin: 0;
+}
+
+.editar-card {
+    background: white;
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.editar-acciones {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.editar-acciones .btn-save-modern { flex: 2; }
+
+.editar-acciones .btn-cancel-modern {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}

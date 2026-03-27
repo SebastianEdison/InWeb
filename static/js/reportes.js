@@ -1,8 +1,6 @@
-/**
- * reportes.js — Panel de control completo
- */
-
 let seccionActiva = null;
+let _cacheFiados   = [];
+let _cacheFacturas = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarDatosTarjetas();
@@ -15,9 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ============================================================
-// --- TARJETAS SUPERIORES ---
-// ============================================================
+// tarjetas superiores
 
 async function cargarDatosTarjetas() {
     const efectivo = parseInt(localStorage.getItem('total_efectivo') || 0);
@@ -52,18 +48,24 @@ async function cargarDatosTarjetas() {
         if (el) el.innerText = (datos.productos || []).length;
     } catch(e) {}
 
-        // Productos por vencer
+    // Productos por vencer
     try {
         const resp  = await fetch('/api/productos_por_vencer?dias=7');
         const datos = await resp.json();
         const el = document.getElementById('rep-vencer');
         if (el) el.innerText = (datos.productos || []).length;
     } catch(e) {}
+
+    // Proveedores
+    try {
+        const resp  = await fetch('/api/obtener_proveedores');
+        const datos = await resp.json();
+        const el = document.getElementById('rep-proveedores');
+        if (el) el.innerText = (datos.proveedores || []).length;
+    } catch(e) {}
 }
 
-// ============================================================
-// --- NAVEGACIÓN ENTRE SECCIONES ---
-// ============================================================
+// navegación entre secciones
 
 function mostrarSeccion(seccion) {
     seccionActiva = seccion;
@@ -77,17 +79,19 @@ function mostrarSeccion(seccion) {
     document.getElementById('panel-config').style.display    = 'none';
     document.getElementById('tabla-principal').style.display = 'none';
 
-    if (seccion === 'diario')   { mostrarFiltro('filtro-fecha');    cargarVentasDiarias(); }
-    if (seccion === 'fiados')   { mostrarFiltro('filtro-fiados');   cargarFiados(); }
-    if (seccion === 'graficos')  { cargarGraficos(); }
-    if (seccion === 'facturas') { mostrarFiltro('filtro-facturas'); cargarFacturas(); }
-    if (seccion === 'muertos')  { mostrarFiltro('filtro-muertos');  cargarProductosMuertos(); }
-    if (seccion === 'config')   { cargarConfig(); }
-    if (seccion === 'vencer') { mostrarFiltro('filtro-vencer'); cargarProductosPorVencer(); }
+    if (seccion === 'diario')       { mostrarFiltro('filtro-fecha');        cargarVentasDiarias(); }
+    if (seccion === 'fiados')       { mostrarFiltro('filtro-fiados');       cargarFiados(); }
+    if (seccion === 'graficos')     { cargarGraficos(); }
+    if (seccion === 'facturas')     { mostrarFiltro('filtro-facturas');     cargarFacturas(); }
+    if (seccion === 'muertos')      { mostrarFiltro('filtro-muertos');      cargarProductosMuertos(); }
+    if (seccion === 'config')       { cargarConfig(); }
+    if (seccion === 'vencer')       { mostrarFiltro('filtro-vencer');       cargarProductosPorVencer(); }
+    if (seccion === 'movimientos')  { mostrarFiltro('filtro-movimientos');  cargarMovimientos(); }
+    if (seccion === 'proveedores')  { mostrarFiltro('filtro-proveedores');  cargarProveedores(); }
 }
 
 function ocultarFiltros() {
-    ['filtro-fecha','filtro-fiados','filtro-facturas','filtro-muertos', 'filtro-vencer'].forEach(id => {
+    ['filtro-fecha','filtro-fiados','filtro-facturas','filtro-muertos','filtro-vencer','filtro-movimientos','filtro-proveedores'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -104,9 +108,7 @@ function mostrarTabla() {
     document.getElementById('panel-vacio').style.display     = 'none';
 }
 
-// ============================================================
-// --- VENTAS DIARIAS ---
-// ============================================================
+// ventas diarias
 
 async function cargarVentasDiarias(fechaParam) {
     if (fechaParam === undefined) fechaParam = "";
@@ -170,12 +172,19 @@ async function cargarVentasDiarias(fechaParam) {
                     var hora = venta.fecha ? venta.fecha.split(' ')[1].substring(0,5) : '--:--';
                     var metodoIconos = { 'efectivo': '💵', 'tarjeta': '💳', 'otros': '📱' };
                     var metodoIcon = metodoIconos[venta.metodo_pago] || '💰';
+                    var anulada = venta.anulada;
 
-                    html += '<div style="border:1px solid #e2e8f0; border-radius:10px; margin-bottom:8px; overflow:hidden;">';
+                    // badge o boton de anular
+                    var btnAnular = anulada
+                        ? '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Anulada</span>'
+                        : '<button onclick="anularVenta(' + venta.id + ')" class="btn-anular-venta">Anular</button>';
+
+                    html += '<div style="border:1px solid #e2e8f0; border-radius:10px; margin-bottom:8px; overflow:hidden;' + (anulada ? 'opacity:0.55;' : '') + '">';
                     html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; background:#f1f5f9; cursor:pointer;" onclick="toggleVenta(\'v-' + idx + '-' + vIdx + '\', this)">';
                     html += '<span style="font-weight:600; color:#1e293b; font-size:0.9rem;"><i class="fas fa-chevron-right toggle-icon" style="margin-right:6px; font-size:0.7rem; color:#94a3b8; transition:transform 0.2s;"></i>Venta #' + venta.id + ' — ' + hora + '</span>';
                     html += '<div style="display:flex; align-items:center; gap:12px;"><span style="font-size:0.8rem; color:#64748b;">' + metodoIcon + ' ' + venta.metodo_pago + '</span>';
-                    html += '<strong style="color:#1e293b;">$' + (venta.total || 0).toLocaleString('es-CL') + '</strong></div></div>';
+                    html += '<strong style="color:#1e293b;">$' + (venta.total || 0).toLocaleString('es-CL') + '</strong>';
+                    html += btnAnular + '</div></div>';
                     html += '<div id="v-' + idx + '-' + vIdx + '" style="display:none; padding:10px 15px;">';
 
                     if (venta.productos && venta.productos.length > 0) {
@@ -214,9 +223,7 @@ async function cargarVentasDiarias(fechaParam) {
     }
 }
 
-// ============================================================
-// --- FIADOS ---
-// ============================================================
+// fiados
 
 async function cargarFiados() {
     const titulo = document.getElementById('titulo-detalle');
@@ -232,7 +239,8 @@ async function cargarFiados() {
     try {
         const resp  = await fetch('/api/obtener_fiados');
         const datos = await resp.json();
-        var fiados  = datos.fiados || [];
+        _cacheFiados = datos.fiados || [];
+        var fiados   = _cacheFiados.slice();
 
         const filtro = document.getElementById('filtro-estado-fiados') ? document.getElementById('filtro-estado-fiados').value : 'pendientes';
         if (filtro === 'pendientes') fiados = fiados.filter(function(f) { return f.estado !== 'pagado'; });
@@ -254,6 +262,7 @@ async function cargarFiados() {
             var btnSaldar = f.estado !== 'pagado'
                 ? '<button onclick="abrirModalSaldar(' + f.id + ', \'' + f.nombre_cliente + '\', ' + saldo + ')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600;">Saldar</button>'
                 : '<span style="color:#94a3b8; font-size:0.8rem;">✓</span>';
+            var btnVer = '<button onclick="verDetalleFiado(' + f.id + ')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.8rem; margin-left:4px;" title="Ver detalle"><i class="fas fa-eye"></i></button>';
 
             return '<tr style="border-bottom:1px solid #f1f5f9;">' +
                 '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-user" style="color:#f59e0b; margin-right:6px;"></i>' + f.nombre_cliente + '</td>' +
@@ -263,7 +272,7 @@ async function cargarFiados() {
                 '<td style="color:#10b981; font-weight:600;">$' + f.monto_pagado.toLocaleString('es-CL') + '</td>' +
                 '<td style="font-weight:700; color:' + (saldo > 0 ? '#b91c1c' : '#10b981') + ';">$' + saldo.toLocaleString('es-CL') + '</td>' +
                 '<td>' + badge + '</td>' +
-                '<td>' + btnSaldar + '</td>' +
+                '<td style="white-space:nowrap;">' + btnSaldar + btnVer + '</td>' +
                 '</tr>';
         }, 8);
 
@@ -273,9 +282,7 @@ async function cargarFiados() {
     }
 }
 
-// ============================================================
-// --- FACTURAS ---
-// ============================================================
+// facturas
 
 async function cargarFacturas() {
     const titulo = document.getElementById('titulo-detalle');
@@ -291,7 +298,8 @@ async function cargarFacturas() {
     try {
         const resp   = await fetch('/api/obtener_facturas');
         const datos  = await resp.json();
-        var facturas = datos.facturas || [];
+        _cacheFacturas = datos.facturas || [];
+        var facturas   = _cacheFacturas.slice();
 
         const filtro = document.getElementById('filtro-estado-facturas') ? document.getElementById('filtro-estado-facturas').value : 'pendientes';
         if (filtro === 'pendientes') facturas = facturas.filter(function(f) { return f.estado === 'pendiente'; });
@@ -309,6 +317,7 @@ async function cargarFacturas() {
             var btnPagar = f.estado === 'pendiente'
                 ? '<button onclick="marcarFacturaPagada(' + f.id + ')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem; font-weight:600;">✓ Pagar</button>'
                 : '<span style="color:#94a3b8; font-size:0.8rem;">✓</span>';
+            var btnVer = '<button onclick="verDetalleFactura(' + f.id + ')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.8rem; margin-left:4px;" title="Ver detalle"><i class="fas fa-eye"></i></button>';
 
             return '<tr style="border-bottom:1px solid #f1f5f9;">' +
                 '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-file-invoice" style="color:#3b82f6; margin-right:6px;"></i>#' + f.numero_factura + '</td>' +
@@ -318,7 +327,7 @@ async function cargarFacturas() {
                 '<td style="font-size:0.8rem; color:#64748b; max-width:180px;"><span style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + (f.productos||'') + '">' + (f.productos||'—') + '</span></td>' +
                 '<td style="font-weight:700; color:#1e293b;">$' + (f.monto_total||0).toLocaleString('es-CL') + '</td>' +
                 '<td>' + badge + '</td>' +
-                '<td>' + btnPagar + '</td>' +
+                '<td style="white-space:nowrap;">' + btnPagar + btnVer + '</td>' +
                 '</tr>';
         }, 8);
 
@@ -347,9 +356,7 @@ async function marcarFacturaPagada(id) {
     }
 }
 
-// ============================================================
-// --- PRODUCTOS MUERTOS ---
-// ============================================================
+// productos muertos
 
 async function cargarProductosMuertos() {
     const titulo = document.getElementById('titulo-detalle');
@@ -390,9 +397,7 @@ async function cargarProductosMuertos() {
     }
 }
 
-// ============================================================
-// --- CONFIGURACIÓN ---
-// ============================================================
+// configuración
 
 async function cargarConfig() {
     const titulo = document.getElementById('titulo-detalle');
@@ -526,9 +531,7 @@ async function crearUsuario() {
     }
 }
 
-// ============================================================
-// --- MODAL SALDAR FIADO ---
-// ============================================================
+// modal saldar fiado
 
 function abrirModalSaldar(id, nombre, saldo) {
     document.getElementById('saldar-id').value            = id;
@@ -570,9 +573,7 @@ async function confirmarSaldar() {
     }
 }
 
-// ============================================================
-// --- MODAL NUEVA FACTURA ---
-// ============================================================
+// modal nueva factura
 
 function abrirModalFactura() {
     const hoy = new Date().toISOString().split('T')[0];
@@ -636,9 +637,7 @@ async function guardarFactura() {
     }
 }
 
-// ============================================================
-// --- TOGGLE ---
-// ============================================================
+// toggle
 
 function toggleDia(id, fila) {
     const el = document.getElementById(id);
@@ -658,9 +657,7 @@ function toggleVenta(id, cabecera) {
     if (icon) icon.style.transform = vis ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
-// ============================================================
-// --- HELPERS ---
-// ============================================================
+// helpers
 
 function formatearFechaDisplay(fecha) {
     if (!fecha) return '';
@@ -758,9 +755,7 @@ function descargarExcelDia(fecha) {
     window.location.href = '/api/excel_dia/' + fecha;
 }
 
-// ============================================================
-// --- GRÁFICOS ---
-// ============================================================
+// gráficos
 
 let chartTorta   = null;
 let chartBarras  = null;
@@ -941,9 +936,7 @@ async function cargarGraficos() {
     }
 }
 
-// ============================================================
-// --- PAGINACIÓN ---
-// ============================================================
+// paginación
 
 let paginaActual = 1;
 const ITEMS_POR_PAGINA = 10;
@@ -1063,3 +1056,368 @@ async function cargarProductosPorVencer() {
         body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;">Error de conexión.</td></tr>';
     }
 }
+// detalle fiado
+
+function verDetalleFiado(id) {
+    var f = _cacheFiados.find(function(x) { return x.id === id; });
+    if (!f) return;
+
+    var saldo = f.monto_total - f.monto_pagado;
+    var badges = {
+        'pendiente': '<span style="background:#fee2e2;color:#b91c1c;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">Pendiente</span>',
+        'parcial':   '<span style="background:#fff7ed;color:#c2410c;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">Parcial</span>',
+        'pagado':    '<span style="background:#dcfce7;color:#166534;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">Pagado</span>'
+    };
+
+    var itemsHtml = '';
+    if (f.detalle) {
+        f.detalle.split('|').forEach(function(item) {
+            var t = item.trim();
+            if (t) {
+                itemsHtml += '<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">' +
+                    '<span style="color:#334155;">' + t + '</span></div>';
+            }
+        });
+    } else {
+        itemsHtml = '<p style="color:#94a3b8; font-size:0.85rem;">Sin detalle de productos.</p>';
+    }
+
+    document.getElementById('df-nombre').textContent  = f.nombre_cliente;
+    document.getElementById('df-fecha').textContent   = f.fecha;
+    document.getElementById('df-estado').innerHTML    = badges[f.estado] || f.estado;
+    document.getElementById('df-items').innerHTML     = itemsHtml;
+    document.getElementById('df-total').textContent   = '$' + f.monto_total.toLocaleString('es-CL');
+    document.getElementById('df-pagado').textContent  = '$' + f.monto_pagado.toLocaleString('es-CL');
+    document.getElementById('df-saldo').textContent   = '$' + saldo.toLocaleString('es-CL');
+    document.getElementById('df-saldo').style.color   = saldo > 0 ? '#b91c1c' : '#10b981';
+
+    document.getElementById('modal-detalle-fiado').style.display = 'flex';
+}
+
+function cerrarModalDetalleFiado() {
+    document.getElementById('modal-detalle-fiado').style.display = 'none';
+}
+
+// detalle factura
+
+function verDetalleFactura(id) {
+    var f = _cacheFacturas.find(function(x) { return x.id === id; });
+    if (!f) return;
+
+    var badge = f.estado === 'pagada'
+        ? '<span style="background:#dcfce7;color:#166534;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">Pagada</span>'
+        : '<span style="background:#fee2e2;color:#b91c1c;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">Pendiente</span>';
+
+    document.getElementById('dfac-numero').textContent    = '#' + f.numero_factura;
+    document.getElementById('dfac-proveedor').textContent = f.proveedor;
+    document.getElementById('dfac-rut').textContent       = f.rut_proveedor || '—';
+    document.getElementById('dfac-fecha').textContent     = f.fecha;
+    document.getElementById('dfac-monto').textContent     = '$' + (f.monto_total || 0).toLocaleString('es-CL');
+    document.getElementById('dfac-estado').innerHTML      = badge;
+    document.getElementById('dfac-productos').textContent = f.productos || '—';
+
+    document.getElementById('modal-detalle-factura').style.display = 'flex';
+}
+
+function cerrarModalDetalleFactura() {
+    document.getElementById('modal-detalle-factura').style.display = 'none';
+}
+
+// Feature 5: anular venta
+
+async function anularVenta(id) {
+    if (!confirm('¿Estás seguro de que deseas anular la Venta #' + id + '? Se restaurará el stock.')) return;
+    try {
+        const resp = await fetch('/api/anular_venta', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: id })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            mostrarAlerta('Venta #' + id + ' anulada y stock restaurado');
+            cargarVentasDiarias(document.getElementById('fecha-busqueda') ? document.getElementById('fecha-busqueda').value : '');
+        } else {
+            mostrarAlerta('Error: ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+// Feature 6: movimientos de stock
+
+async function cargarMovimientos() {
+    const titulo = document.getElementById('titulo-detalle');
+    const header = document.getElementById('tabla-header');
+    const body   = document.getElementById('tabla-body');
+
+    titulo.innerText = 'Historial de Movimientos de Stock';
+    header.innerHTML = '<th>Producto</th><th>Código</th><th style="width:110px;">Tipo</th><th style="width:80px;">Cantidad</th><th>Motivo</th><th style="width:145px;">Fecha</th>';
+
+    mostrarTabla();
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+
+    try {
+        const resp  = await fetch('/api/historial_stock');
+        const datos = await resp.json();
+        const movs  = datos.movimientos || [];
+
+        if (movs.length === 0) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">Sin movimientos registrados.</td></tr>';
+            return;
+        }
+
+        var coloresTipo = {
+            'VENTA':     '#fee2e2|#b91c1c',
+            'ENTRADA':   '#dcfce7|#166534',
+            'SALIDA':    '#fff7ed|#c2410c',
+            'ANULACION': '#eff6ff|#2563eb'
+        };
+
+        paginar(movs, function(m) {
+            var partes   = (coloresTipo[m.tipo] || '#f1f5f9|#475569').split('|');
+            var badge    = '<span style="background:' + partes[0] + ';color:' + partes[1] + ';padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">' + m.tipo + '</span>';
+            var fecha    = m.fecha ? m.fecha.substring(0, 16).replace('T', ' ') : '—';
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="font-weight:600; color:#1e293b;">' + (m.producto_nombre || '—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (m.codigo_barra || '—') + '</td>' +
+                '<td>' + badge + '</td>' +
+                '<td style="text-align:center; font-weight:700;">' + m.cantidad + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (m.motivo || '—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.82rem;">' + fecha + '</td>' +
+                '</tr>';
+        }, 6);
+
+    } catch(e) {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">Error de conexión.</td></tr>';
+    }
+}
+
+// modal ajuste manual de stock
+
+let _productosCache = [];
+
+function abrirModalAjusteStock() {
+    document.getElementById('ajuste-buscar').value        = '';
+    document.getElementById('ajuste-cantidad').value      = '';
+    document.getElementById('ajuste-motivo').value        = '';
+    document.getElementById('ajuste-producto-id').value   = '';
+    document.getElementById('ajuste-producto-nombre').textContent = '';
+    document.getElementById('ajuste-sugerencias').innerHTML = '';
+    document.getElementById('modal-ajuste-stock').style.display = 'flex';
+    setTimeout(function() { document.getElementById('ajuste-buscar').focus(); }, 100);
+}
+
+function cerrarModalAjusteStock() {
+    document.getElementById('modal-ajuste-stock').style.display = 'none';
+}
+
+async function confirmarAjusteStock() {
+    const idProducto = parseInt(document.getElementById('ajuste-producto-id').value);
+    const cantidad   = parseInt(document.getElementById('ajuste-cantidad').value);
+    const motivo     = document.getElementById('ajuste-motivo').value.trim() || 'Ajuste manual';
+
+    if (!idProducto) {
+        mostrarAlerta('Selecciona un producto', 'error');
+        return;
+    }
+    if (!cantidad || cantidad === 0) {
+        mostrarAlerta('Ingresa una cantidad distinta de 0', 'error');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/ajuste_stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ producto_id: idProducto, cantidad: cantidad, motivo: motivo })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            cerrarModalAjusteStock();
+            mostrarAlerta('Stock actualizado correctamente');
+            cargarMovimientos();
+        } else {
+            mostrarAlerta('Error: ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+// Feature 7: proveedores
+
+async function cargarProveedores() {
+    const titulo = document.getElementById('titulo-detalle');
+    const header = document.getElementById('tabla-header');
+    const body   = document.getElementById('tabla-body');
+
+    titulo.innerText = 'Gestión de Proveedores';
+    header.innerHTML = '<th>Nombre</th><th>RUT</th><th>Teléfono</th><th>Email</th><th>Notas</th><th style="width:90px;"></th>';
+
+    mostrarTabla();
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+
+    try {
+        const resp  = await fetch('/api/obtener_proveedores');
+        const datos = await resp.json();
+        const provs = datos.proveedores || [];
+
+        // actualizar contador tarjeta
+        const el = document.getElementById('rep-proveedores');
+        if (el) el.innerText = provs.length;
+
+        if (provs.length === 0) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No hay proveedores. <button onclick="abrirModalProveedor()" style="margin-left:10px; background:#3b82f6; color:white; border:none; padding:6px 14px; border-radius:8px; cursor:pointer; font-weight:600;">+ Agregar</button></td></tr>';
+            return;
+        }
+
+        paginar(provs, function(p) {
+            return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="font-weight:700; color:#1e293b;"><i class="fas fa-truck" style="color:#3b82f6; margin-right:6px;"></i>' + p.nombre + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.rut || '—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.telefono || '—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.85rem;">' + (p.email || '—') + '</td>' +
+                '<td style="color:#64748b; font-size:0.8rem; max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + (p.notas || '—') + '</td>' +
+                '<td style="white-space:nowrap;">' +
+                '<button onclick="eliminarProveedor(' + p.id + ')" style="background:#fee2e2;color:#b91c1c;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+                '</td></tr>';
+        }, 6);
+
+    } catch(e) {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#ef4444;">Error de conexión.</td></tr>';
+    }
+}
+
+function abrirModalProveedor() {
+    document.getElementById('prov-id').value       = '';
+    document.getElementById('prov-nombre').value   = '';
+    document.getElementById('prov-rut').value      = '';
+    document.getElementById('prov-telefono').value = '';
+    document.getElementById('prov-email').value    = '';
+    document.getElementById('prov-notas').value    = '';
+    document.getElementById('modal-nuevo-proveedor').style.display = 'flex';
+    setTimeout(function() { document.getElementById('prov-nombre').focus(); }, 100);
+}
+
+function cerrarModalProveedor() {
+    document.getElementById('modal-nuevo-proveedor').style.display = 'none';
+}
+
+async function guardarProveedor() {
+    const nombre = document.getElementById('prov-nombre').value.trim();
+    if (!nombre) {
+        mostrarAlerta('El nombre es obligatorio', 'error');
+        return;
+    }
+    const datos = {
+        id:       document.getElementById('prov-id').value || null,
+        nombre:   nombre,
+        rut:      document.getElementById('prov-rut').value.trim(),
+        telefono: document.getElementById('prov-telefono').value.trim(),
+        email:    document.getElementById('prov-email').value.trim(),
+        notas:    document.getElementById('prov-notas').value.trim()
+    };
+    try {
+        const resp = await fetch('/api/guardar_proveedor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            cerrarModalProveedor();
+            mostrarAlerta('Proveedor guardado correctamente');
+            cargarProveedores();
+            cargarDatosTarjetas();
+        } else {
+            mostrarAlerta('Error: ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+async function eliminarProveedor(id) {
+    if (!confirm('¿Eliminar este proveedor?')) return;
+    try {
+        const resp = await fetch('/api/eliminar_proveedor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            mostrarAlerta('Proveedor eliminado');
+            cargarProveedores();
+            cargarDatosTarjetas();
+        } else {
+            mostrarAlerta('Error: ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+// configurar event listeners para modales del DOM (reportes)
+document.addEventListener('DOMContentLoaded', function() {
+    // botón abrir ajuste manual
+    var btnAjuste = document.getElementById('btn-abrir-ajuste');
+    if (btnAjuste) btnAjuste.addEventListener('click', abrirModalAjusteStock);
+
+    // botones cerrar/confirmar ajuste
+    var btnCerrarAjuste    = document.getElementById('btn-cerrar-ajuste');
+    var btnCancelarAjuste  = document.getElementById('btn-cancelar-ajuste');
+    var btnConfirmarAjuste = document.getElementById('btn-confirmar-ajuste');
+    if (btnCerrarAjuste)    btnCerrarAjuste.addEventListener('click', cerrarModalAjusteStock);
+    if (btnCancelarAjuste)  btnCancelarAjuste.addEventListener('click', cerrarModalAjusteStock);
+    if (btnConfirmarAjuste) btnConfirmarAjuste.addEventListener('click', confirmarAjusteStock);
+
+    // búsqueda de producto en modal ajuste
+    var ajusteBuscar = document.getElementById('ajuste-buscar');
+    if (ajusteBuscar) {
+        var timeoutAjuste;
+        ajusteBuscar.addEventListener('input', function() {
+            clearTimeout(timeoutAjuste);
+            var q = this.value.trim();
+            if (q.length < 2) {
+                document.getElementById('ajuste-sugerencias').innerHTML = '';
+                return;
+            }
+            timeoutAjuste = setTimeout(async function() {
+                try {
+                    var resp = await fetch('/buscar_producto?busqueda=' + q);
+                    var prods = await resp.json();
+                    var lista = document.getElementById('ajuste-sugerencias');
+                    lista.innerHTML = '';
+                    prods.slice(0, 6).forEach(function(p) {
+                        var div = document.createElement('div');
+                        div.className = 'ajuste-sug-item';
+                        div.textContent = p.nombre + ' (stock: ' + p.stock + ')';
+                        div.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            document.getElementById('ajuste-producto-id').value = p.id;
+                            document.getElementById('ajuste-buscar').value      = p.nombre;
+                            document.getElementById('ajuste-producto-nombre').textContent = 'Seleccionado: ' + p.nombre + ' — Stock actual: ' + p.stock;
+                            lista.innerHTML = '';
+                        });
+                        lista.appendChild(div);
+                    });
+                } catch(err) {}
+            }, 200);
+        });
+    }
+
+    // botón abrir proveedor
+    var btnProv = document.getElementById('btn-abrir-proveedor');
+    if (btnProv) btnProv.addEventListener('click', abrirModalProveedor);
+
+    // botones cerrar/guardar proveedor
+    var btnCerrarProv  = document.getElementById('btn-cerrar-proveedor');
+    var btnCancelarProv = document.getElementById('btn-cancelar-proveedor');
+    var btnGuardarProv  = document.getElementById('btn-guardar-proveedor');
+    if (btnCerrarProv)   btnCerrarProv.addEventListener('click', cerrarModalProveedor);
+    if (btnCancelarProv) btnCancelarProv.addEventListener('click', cerrarModalProveedor);
+    if (btnGuardarProv)  btnGuardarProv.addEventListener('click', guardarProveedor);
+});

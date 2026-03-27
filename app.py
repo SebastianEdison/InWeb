@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash,session, send_file
-import sqlite3, os
+from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_file
+import sqlite3, os, shutil, threading
 from functools import wraps
-from datetime import datetime , timedelta
+from datetime import datetime, timedelta
 import pytz
 
 from databases import (
-    obtener_productos, eliminar_producto, actualizar_producto, 
-    agregar_producto, buscar_producto_por_codigo, conectar, 
-    crear_tablas, guardar_cierre_db, obtener_historial_db,obtener_productos_por_vencer,
-    registrar_venta,guardar_fiado_db, obtener_fiados_db, saldar_fiado_db,
+    obtener_productos, eliminar_producto, actualizar_producto,
+    agregar_producto, buscar_producto_por_codigo, conectar,
+    crear_tablas, guardar_cierre_db, obtener_historial_db, obtener_productos_por_vencer,
+    registrar_venta, guardar_fiado_db, obtener_fiados_db, saldar_fiado_db,
     verificar_usuario, crear_usuario, obtener_usuarios, guardar_factura_db, obtener_facturas_db, actualizar_estado_factura_db,
-    obtener_productos_muertos_db, obtener_config_db, guardar_config_db ,cambiar_password_db, generar_reporte_excel,generar_excel_dia
+    obtener_productos_muertos_db, obtener_config_db, guardar_config_db, cambiar_password_db, generar_reporte_excel, generar_excel_dia,
+    anular_venta_db, obtener_historial_stock_db, ajuste_manual_stock_db,
+    obtener_proveedores_db, guardar_proveedor_db, eliminar_proveedor_db
 )
 
 app = Flask(__name__)
@@ -118,14 +120,32 @@ cierre_reciente_ticket = {}
 def index():
     busqueda = request.args.get('busqueda', '').strip()
     solo_bajo_stock = request.args.get('bajo_stock')
-    productos_db = obtener_productos(busqueda if busqueda else None)
-    if solo_bajo_stock:
-        productos_db = [p for p in productos_db if p['stock'] <= 3]
-    
-    todos = obtener_productos(None)
-    alertas_count = sum(1 for p in todos if p['stock'] <= 3)
+    categoria_filter = request.args.get('categoria', '')
 
-    return render_template('index.html', lista=productos_db, busqueda=busqueda, alertas=alertas_count, filtrado_bajo=solo_bajo_stock)
+    productos_db = obtener_productos(busqueda if busqueda else None)
+
+    # filtro por categoría
+    if categoria_filter:
+        productos_db = [p for p in productos_db if p['categoria'] == categoria_filter]
+
+    if solo_bajo_stock:
+        productos_db = [p for p in productos_db if p['stock_minimo'] and p['stock_minimo'] > 0 and p['stock'] <= p['stock_minimo']]
+
+    todos = obtener_productos(None)
+    alertas_count = sum(1 for p in todos if p['stock'] > 0 and p['stock_minimo'] and p['stock_minimo'] > 0 and p['stock'] <= p['stock_minimo'])
+
+    # lista de categorías distintas para mostrar filtros
+    categorias_set = sorted({p['categoria'] for p in todos if p['categoria']})
+
+    return render_template(
+        'index.html',
+        lista=productos_db,
+        busqueda=busqueda,
+        alertas=alertas_count,
+        filtrado_bajo=solo_bajo_stock,
+        categorias=categorias_set,
+        categoria_activa=categoria_filter
+    )
 
 # --- VENTAS Y REPORTES ---
 @app.route('/ventas')
@@ -151,7 +171,8 @@ def api_registrar_venta():
         if not carrito:
             return jsonify({"status": "error", "message": "El carrito está vacío"}), 400
 
-        exito, resultado = registrar_venta(carrito, metodo_pago, forzar)
+        descuento = data.get('descuento', 0)
+        exito, resultado = registrar_venta(carrito, metodo_pago, forzar, descuento)
 
         if exito:
             return jsonify({"status": "success", "venta_id": resultado})
@@ -303,7 +324,7 @@ def api_ventas_por_dia():
         # Para cada día, traer el detalle de cada venta
         for dia in dias:
             cursor.execute("""
-                SELECT v.id, v.fecha, v.total, v.metodo_pago
+                SELECT v.id, v.fecha, v.total, v.metodo_pago, v.descuento, v.anulada
                 FROM ventas v
                 WHERE DATE(v.fecha) = ?
                 ORDER BY v.fecha DESC
@@ -344,7 +365,10 @@ def actualizar():
         float(request.form['precio']),
         float(request.form['costo']),
         int(request.form['stock']),
-        request.form.get('unidad', 'Unidad')  # ← agregar esto
+        request.form.get('unidad', 'Unidad'),
+        request.form.get('fecha_vencimiento') or None,
+        int(request.form.get('stock_minimo', 0)),
+        request.form.get('categoria', 'General')
     )
     return redirect('/')
 
@@ -374,8 +398,10 @@ def agregar():
         unidad = data.get('unidad', 'Unidad')
         fecha_vencimiento = data.get('fecha_vencimiento', None)
         
-        agregar_producto(codigo, nombre, precio_v, precio_c, stock, unidad, fecha_vencimiento)
-        
+        stock_minimo = data.get('stock_minimo', 0)
+        categoria = data.get('categoria', 'General')
+        agregar_producto(codigo, nombre, precio_v, precio_c, stock, unidad, fecha_vencimiento, stock_minimo, categoria)
+
         return jsonify({"status": "success"})
     
     return render_template('agregar.html')
@@ -395,7 +421,8 @@ def buscar_producto():
             "unidad": p['unidad'],
             "codigo_barra": p['codigo_barra'],
             "stock": p['stock'],
-            "fecha_vencimiento": p['fecha_vencimiento'] if p['fecha_vencimiento'] else None
+            "fecha_vencimiento": p['fecha_vencimiento'] if p['fecha_vencimiento'] else None,
+            "categoria": p['categoria'] if p['categoria'] else 'General'
         })
     return jsonify(lista)
 
@@ -502,9 +529,6 @@ def api_guardar_config():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-    
-# En el import de databases agrega:
-cambiar_password_db
 
 # Nueva ruta:
 @app.route('/api/cambiar_password', methods=['POST'])
@@ -616,6 +640,113 @@ def api_datos_graficos():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Feature 5: anular venta
+@app.route('/api/anular_venta', methods=['POST'])
+@login_requerido
+def api_anular_venta():
+    try:
+        data = request.get_json()
+        venta_id = data.get('venta_id')
+        exito, msg = anular_venta_db(venta_id)
+        if exito:
+            return jsonify({"status": "success"})
+        return jsonify({"status": "error", "message": msg}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Feature 6: historial de stock y ajustes manuales
+@app.route('/api/historial_stock')
+@login_requerido
+def api_historial_stock():
+    try:
+        limite = int(request.args.get('limite', 100))
+        historial = obtener_historial_stock_db(limite)
+        return jsonify({"movimientos": historial})
+    except Exception as e:
+        return jsonify({"movimientos": [], "error": str(e)}), 500
+
+
+@app.route('/api/ajuste_stock', methods=['POST'])
+@login_requerido
+def api_ajuste_stock():
+    try:
+        data = request.get_json()
+        producto_id = data.get('producto_id')
+        cantidad    = int(data.get('cantidad', 0))
+        motivo      = data.get('motivo', 'Ajuste manual').strip()
+
+        if not producto_id or cantidad == 0:
+            return jsonify({"status": "error", "message": "Datos inválidos"}), 400
+
+        exito, msg = ajuste_manual_stock_db(producto_id, cantidad, motivo)
+        if exito:
+            return jsonify({"status": "success", "message": msg})
+        return jsonify({"status": "error", "message": msg}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Feature 7: proveedores
+@app.route('/api/obtener_proveedores')
+@login_requerido
+def api_obtener_proveedores():
+    try:
+        proveedores = obtener_proveedores_db()
+        return jsonify({"proveedores": proveedores})
+    except Exception as e:
+        return jsonify({"proveedores": [], "error": str(e)}), 500
+
+
+@app.route('/api/guardar_proveedor', methods=['POST'])
+@login_requerido
+def api_guardar_proveedor():
+    try:
+        data = request.get_json()
+        if not data.get('nombre', '').strip():
+            return jsonify({"status": "error", "message": "El nombre es obligatorio"}), 400
+        guardar_proveedor_db(data)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/eliminar_proveedor', methods=['POST'])
+@login_requerido
+def api_eliminar_proveedor():
+    try:
+        data = request.get_json()
+        proveedor_id = data.get('id')
+        if not proveedor_id:
+            return jsonify({"status": "error", "message": "ID inválido"}), 400
+        eliminar_proveedor_db(proveedor_id)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Feature 8: backup automático diario
+def hacer_backup_automatico():
+    backup_dir = os.path.join(os.path.dirname(__file__), 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    db_path = os.path.join(os.path.dirname(__file__), 'inventario.db')
+    tz = pytz.timezone('America/Santiago')
+    fecha = datetime.now(tz).strftime('%Y-%m-%d')
+    dest = os.path.join(backup_dir, f'backup_{fecha}.db')
+    if not os.path.exists(dest):
+        shutil.copy2(db_path, dest)
+        print(f"Backup automático guardado: {dest}")
+    # mantener solo los últimos 7 backups
+    archivos = sorted([f for f in os.listdir(backup_dir) if f.endswith('.db')])
+    while len(archivos) > 7:
+        os.remove(os.path.join(backup_dir, archivos.pop(0)))
+    # próximo backup en 24 horas
+    timer = threading.Timer(86400, hacer_backup_automatico)
+    timer.daemon = True
+    timer.start()
+
+
 if __name__ == '__main__':
-    crear_tablas() 
+    crear_tablas()
+    hacer_backup_automatico()
     app.run(debug=True)

@@ -292,4 +292,242 @@
 }
 
 .card-graficos .card-icon { background: #6366f1; }
+
+/* --- ENCABEZADO DEL PANEL DETALLE --- */
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* --- FILTROS DE SECCIÓN --- */
+.filtro-seccion {
+    align-items: center;
+    gap: 10px;
+}
+
+.filtro-seccion label {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.select-filtro {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    outline: none;
+    background: white;
+}
+
+.btn-nueva-factura {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-nueva-factura:hover { background: #2563eb; }
+
+/* --- PANEL VACÍO INICIAL --- */
+.panel-vacio {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.panel-vacio i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.panel-vacio p { font-size: 1rem; }
+
+/* --- TARJETA ACTIVA (tab seleccionado) --- */
+.card-activa {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px -3px rgba(0,0,0,0.15);
+    outline: 3px solid rgba(255,255,255,0.4);
+}
+
+/* --- PÁGINA DETALLE CIERRE --- */
+.cierre-resultado-wrapper {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.cierre-resultado-card {
+    text-align: center;
+    border: 2px solid #e2e8f0;
+    padding: 30px;
+    border-radius: 15px;
+    background: white;
+}
+
+.cierre-resultado-icono {
+    font-size: 3.5rem;
+    color: #10b981;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.cierre-resultado-card h1 { color: #1e293b; }
+
+.cierre-resultado-card > p { color: #64748b; }
+
+.cierre-resultado-detalle {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.cierre-resultado-fila {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.cierre-resultado-hr {
+    border: 1px dashed #cbd5e1;
+    margin: 15px 0;
+}
+
+.cierre-resultado-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    color: #0f172a;
+}
+
+.cierre-resultado-fiados {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.cierre-resultado-fiados > div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cierre-resultado-fiados small {
+    display: block;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.cierre-resultado-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-imprimir {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    background: white;
+}
+
+.btn-ver-reportes {
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
 .card-graficos .trend     { color: #4f46e5; }
+
+/* nuevas tarjetas de movimientos y proveedores */
+.card-movimientos .card-icon { background: #0ea5e9; }
+.card-movimientos .trend     { color: #0284c7; }
+
+.card-proveedores .card-icon { background: #f97316; }
+.card-proveedores .trend     { color: #ea580c; }
+
+/* grid compacto ahora tiene más tarjetas: usar auto-fill */
+.reportes-grid-compacto {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* campos de formulario en modales de reportes */
+.modal-campo-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    background: #f8fafc;
+}
+
+.modal-campo-input:focus { border-color: #3b82f6; }
+
+.modal-campo-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+    background: #f8fafc;
+    transition: border-color 0.2s;
+}
+
+.modal-campo-textarea:focus { border-color: #3b82f6; }
+
+.modal-campo-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    outline: none;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.modal-campo-lbl-small {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.factura-campo { margin-bottom: 14px; }
+
+.factura-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}

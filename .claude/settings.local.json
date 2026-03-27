@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"style=\" templates/*.html)",
+      "Bash(grep -n \"<style\\\\|<script\" templates/*.html)",
+      "Bash(grep -rn \"<style\\\\b\\\\|<script\\\\b\" templates/*.html)",
+      "Bash(python:*)"
+    ]
+  }
+}
