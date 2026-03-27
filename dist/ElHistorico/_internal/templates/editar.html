@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Producto - EL HISTORICO{% endblock %}
+
+{% block content %}
+<div class="editar-wrapper">
+
+    <div class="editar-encabezado">
+        <h1>✏️ Editar Producto</h1>
+        <p>Modifica los datos del producto y guarda los cambios.</p>
+    </div>
+
+    <div class="editar-card">
+        <form action="/actualizar" method="POST">
+            <input type="hidden" name="id" value="{{ p['id'] }}">
+
+            <div class="form-group">
+                <label class="lbl-blue">
+                    <i class="fas fa-tag"></i> Nombre del Producto
+                </label>
+                <input type="text" name="nombre" value="{{ p['nombre'] }}" required
+                       placeholder="Ej: Leche entera 1L">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-green">
+                        <i class="fas fa-arrow-down"></i> Precio Costo ($)
+                    </label>
+                    <input type="number" name="costo"
+                           value="{{ p['costo'] | int }}" required
+                           placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-orange">
+                        <i class="fas fa-arrow-up"></i> Precio Venta ($)
+                    </label>
+                    <input type="number" name="precio"
+                           value="{{ p['precio_venta'] | int }}" required
+                           placeholder="0">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-purple">
+                        <i class="fas fa-boxes"></i> Stock Actual
+                    </label>
+                    <input type="number" name="stock"
+                           value="{{ p['stock'] }}" required
+                           placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-orange">
+                        <i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                        <span class="lbl-opcional">(alerta)</span>
+                    </label>
+                    <input type="number" name="stock_minimo"
+                           value="{{ p['stock_minimo'] if p['stock_minimo'] else 0 }}"
+                           placeholder="0" min="0">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-weight"></i> Unidad de Venta
+                    </label>
+                    <select name="unidad">
+                        <option value="Unidad" {{ 'selected' if p['unidad'] == 'Unidad' }}>Unidad</option>
+                        <option value="Kg"     {{ 'selected' if p['unidad'] == 'Kg' }}>Kilogramo (Kg)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-tag"></i> Categoría
+                    </label>
+                    <select name="categoria">
+                        {% for cat in ['General','Lácteos','Bebidas','Panadería','Carnes','Limpieza','Confites','Frutas y Verduras','Otro'] %}
+                        <option value="{{ cat }}" {{ 'selected' if (p['categoria'] or 'General') == cat }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="lbl-blue">
+                        <i class="fas fa-calendar-times"></i> Fecha Vencimiento
+                        <span class="lbl-opcional">(opcional)</span>
+                    </label>
+                    <input type="date" name="fecha_vencimiento"
+                        value="{{ p['fecha_vencimiento'] if p['fecha_vencimiento'] else '' }}">
+                </div>
+            </div>
+
+            <div class="editar-acciones">
+                <button type="submit" class="btn-save-modern">
+                    <i class="fas fa-check-circle"></i> Guardar Cambios
+                </button>
+                <a href="/" class="btn-cancel-modern">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Ventas - Mi Negocio{% endblock %}
+
+{% block topbar_stats %}
+    <div class="caja-diaria-group">
+            <div class="indicator-card total-dia">
+                <i class="fas fa-chart-line"></i>
+                <div class="info">
+                    <span>Venta Total</span>
+                    <strong id="total-dia-acumulado">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card efectivo">
+                <i class="fas fa-money-bill-wave"></i>
+                <div class="info">
+                    <span>Efectivo</span>
+                    <strong id="total-efectivo">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card tarjeta">
+                <i class="fas fa-credit-card"></i>
+                <div class="info">
+                    <span>Tarjeta</span>
+                    <strong id="total-tarjeta">$0</strong>
+                </div>
+            </div>
+            <div class="indicator-card otros">
+                <i class="fas fa-wallet"></i>
+                <div class="info">
+                    <span>Otros</span>
+                    <strong id="total-otros">$0</strong>
+                </div>
+            </div>
+
+            <div class="sep-vertical"></div>
+            <button type="button"
+                    onclick="solicitarCierreTurno()"
+                    class="btn-mini-cierre">
+                <i class="fas fa-power-off"></i> Cerrar Caja
+            </button>
+    </div>
+
+{% endblock %}
+
+{% block content %}
+    <div class="ventas-layout">
+        <div class="ventas-main">
+            <section class="search-box-container">
+                <div class="input-with-icon">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="buscador-ventas"
+                           placeholder="Escriba nombre del producto o escanee código..."
+                           autocomplete="off" autofocus>
+                    <ul id="lista-sugerencias" class="sugerencias-busqueda"></ul>
+                </div>
+            </section>
+
+            <div class="tabla-container card-shadow">
+                <table class="tabla-ventas" id="tabla-carrito">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cant.</th>
+                            <th>Precio Unitario</th>
+                            <th>Precio Neto</th>
+                            <th>IVA (19%)</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla-ventas">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="ventas-sidebar">
+            <div class="resumen-card card-shadow">
+                <h3>Resumen de Venta</h3>
+
+                <div class="fila-resumen">
+                    <span>Subtotal Neto:</span>
+                    <strong id="total-neto">$0</strong>
+                </div>
+                <div class="fila-resumen">
+                    <span>IVA Total (19%):</span>
+                    <strong id="total-iva">$0</strong>
+                </div>
+
+                <div class="fila-resumen descuento-row">
+                    <span>Descuento:</span>
+                    <div class="descuento-controles">
+                        <input type="number" id="descuento-valor" placeholder="0" min="0" class="descuento-input">
+                        <select id="descuento-tipo" class="descuento-select">
+                            <option value="pct">%</option>
+                            <option value="fijo">$</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="fila-resumen" id="fila-descuento-calculado" style="display:none;">
+                    <span>Ahorro:</span>
+                    <strong id="descuento-calculado" class="txt-ahorro">-$0</strong>
+                </div>
+
+                <div class="total-grande">
+                    <p>TOTAL A COBRAR</p>
+                    <h2 id="gran-total">$0</h2>
+                </div>
+
+                <button class="btn-confirmar-venta" onclick="abrirModalCobro()">
+                    <i class="fas fa-cash-register"></i> COBRAR
+                </button>
+
+                <button class="btn-cancelar-discreto" onclick="cancelarVenta()">
+                    <i class="fas fa-trash"></i> Cancelar Venta
+                </button>
+
+                <div class="acciones-secundarias">
+                    <button class="btn-fiado-discreto" onclick="abrirModalFiado()">
+                        <i class="fas fa-book"></i> Anotar Fiado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal cobro -->
+    <div id="modal-cobro" class="modal">
+        <div class="modal-content card-shadow">
+            <div class="modal-header">
+                <h2><i class="fas fa-cash-register"></i> Finalizar Venta</h2>
+                <span class="close-modal" onclick="cerrarModal()">&times;</span>
+            </div>
+
+            <div class="modal-body">
+                <div class="total-pago-display">
+                    <span>Total a Cobrar</span>
+                    <h1 id="modal-total-grande">$0</h1>
+                </div>
+
+                <label class="label-seccion">Método de Pago:</label>
+                <div class="metodo-pago-grid">
+                    <div class="metodo-item active" onclick="seleccionarMetodo(this, 'efectivo')">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Efectivo</span>
+                    </div>
+                    <div class="metodo-item" onclick="seleccionarMetodo(this, 'tarjeta')">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Tarjeta</span>
+                    </div>
+                    <div class="metodo-item" onclick="seleccionarMetodo(this, 'otros')">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Otros</span>
+                    </div>
+                </div>
+                <input type="hidden" id="metodo-seleccionado" value="efectivo">
+
+                <div id="seccion-efectivo">
+                    <div class="input-pago-container">
+                        <label>Paga con:</label>
+                        <input type="number" id="monto-recibido" placeholder="Ej: 5000">
+                    </div>
+                    <div class="vuelto-box">
+                        <span>Su Vuelto:</span>
+                        <strong id="vuelto-cliente">$0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-volver" onclick="cerrarModal()">VOLVER</button>
+                <button class="btn-finalizar-venta" onclick="procesarVentaFinal()">
+                    CONFIRMAR COBRO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal monto (productos por kg) -->
+    <div id="modal-peso" class="modal-gen">
+        <div class="modal-gen-box w-md">
+
+            <div class="modal-gen-header mh-gray">
+                <h2><i class="fas fa-shopping-basket"></i> Ingresa el Monto</h2>
+                <span class="btn-cerrar-modal" onclick="cerrarModalPeso()">&times;</span>
+            </div>
+
+            <div class="modal-gen-body">
+                <div class="modal-info-box azul">
+                    <p class="modal-lbl-muted">Producto</p>
+                    <strong id="modal-peso-nombre" class="modal-nombre-destacado"></strong>
+                    <p id="modal-peso-precio" class="modal-precio-ref"></p>
+                </div>
+
+                <div class="factura-campo">
+                    <label class="modal-campo-lbl">
+                        <i class="fas fa-dollar-sign"></i> ¿Cuánto cobra?
+                    </label>
+                    <div class="modal-monto-wrapper" id="input-monto-wrapper">
+                        <span class="modal-monto-prefix">$</span>
+                        <input type="number" id="input-kg"
+                               placeholder="0" step="1" min="1"
+                               oninput="calcularTotalPeso()"
+                               onkeydown="if(event.key==='Enter') confirmarProductoPeso()"
+                               onfocus="document.getElementById('input-monto-wrapper').style.borderColor='#3b82f6'"
+                               onblur="document.getElementById('input-monto-wrapper').style.borderColor='#e2e8f0'"
+                               class="modal-monto-input">
+                    </div>
+                </div>
+
+                <div class="modal-total-dark">
+                    <p>Total a cobrar</p>
+                    <strong id="modal-peso-total">$0</strong>
+                </div>
+            </div>
+
+            <div class="modal-gen-footer">
+                <button onclick="cerrarModalPeso()" class="btn-modal-cancelar">Cancelar</button>
+                <button onclick="confirmarProductoPeso()" class="btn-modal-ok azul">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal cierre de caja -->
+    <div id="modal-cierre" class="modal-gen">
+        <div class="modal-gen-box w-md">
+
+            <div class="modal-gen-header mh-red">
+                <h2><i class="fas fa-power-off"></i> Cerrar Caja</h2>
+                <span class="btn-cerrar-modal" onclick="cerrarModalCierre()">&times;</span>
+            </div>
+
+            <div class="modal-gen-body">
+                <p class="modal-desc">¿Confirmas el cierre del turno? Se guardará el siguiente resumen:</p>
+
+                <div class="cierre-summary">
+                    <div class="cierre-row">
+                        <span class="cierre-row-label">
+                            <i class="fas fa-money-bill-wave"></i> Efectivo
+                        </span>
+                        <strong id="cierre-efectivo" class="cierre-row-valor">$0</strong>
+                    </div>
+                    <div class="cierre-row">
+                        <span class="cierre-row-label">
+                            <i class="fas fa-credit-card"></i> Tarjeta
+                        </span>
+                        <strong id="cierre-tarjeta" class="cierre-row-valor">$0</strong>
+                    </div>
+                    <div class="cierre-row">
+                        <span class="cierre-row-label">
+                            <i class="fas fa-wallet"></i> Otros
+                        </span>
+                        <strong id="cierre-otros" class="cierre-row-valor">$0</strong>
+                    </div>
+                    <div class="cierre-row">
+                        <span class="cierre-row-label muted">
+                            <i class="fas fa-user-tag"></i> Fiados
+                        </span>
+                        <strong id="cierre-fiados" class="cierre-row-valor muted">$0</strong>
+                    </div>
+                    <div class="cierre-row-total">
+                        <span class="cierre-total-lbl">TOTAL EN CAJA</span>
+                        <strong id="cierre-total" class="cierre-total-valor">$0</strong>
+                    </div>
+                </div>
+
+                <p class="modal-nota">Este cierre quedará registrado en el historial de Reportes.</p>
+            </div>
+
+            <div class="modal-gen-footer">
+                <button onclick="cerrarModalCierre()" class="btn-modal-cancelar">Cancelar</button>
+                <button onclick="confirmarCierreCaja()" class="btn-modal-ok rojo">
+                    <i class="fas fa-power-off"></i> Confirmar Cierre
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal fiado -->
+    <div id="modal-fiado" class="modal-gen">
+        <div class="modal-gen-box w-md">
+
+            <div class="modal-gen-header mh-yellow">
+                <h2><i class="fas fa-book"></i> Anotar Fiado</h2>
+                <span class="btn-cerrar-modal" onclick="cerrarModalFiado()">&times;</span>
+            </div>
+
+            <div class="modal-gen-body">
+                <div class="factura-campo">
+                    <label class="modal-campo-lbl">
+                        <i class="fas fa-user"></i> Nombre del cliente
+                    </label>
+                    <input type="text" id="fiado-nombre"
+                           placeholder="Ej: Juan Pérez"
+                           class="modal-cliente-input">
+                </div>
+
+                <div class="fiado-detalle-box">
+                    <p class="modal-lbl-muted">Detalle de la deuda</p>
+                    <div id="fiado-detalle" class="fiado-detalle-content"></div>
+                    <div class="fiado-total-row">
+                        <span class="fiado-total-lbl">Total fiado:</span>
+                        <strong id="fiado-total" class="fiado-total-val">$0</strong>
+                    </div>
+                </div>
+
+                <p class="modal-nota">El carrito se vaciará y la deuda quedará registrada en Reportes.</p>
+            </div>
+
+            <div class="modal-gen-footer">
+                <button onclick="cerrarModalFiado()" class="btn-modal-cancelar">Cancelar</button>
+                <button onclick="confirmarFiado()" class="btn-modal-ok amarillo">
+                    <i class="fas fa-book"></i> Registrar Fiado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal boleta imprimible -->
+    <div id="modal-boleta" class="modal-gen">
+        <div class="modal-gen-box w-md">
+            <div class="modal-gen-header mh-gray">
+                <h2><i class="fas fa-receipt"></i> Boleta de Venta</h2>
+                <span class="btn-cerrar-modal" id="btn-cerrar-boleta">&times;</span>
+            </div>
+            <div class="modal-gen-body">
+                <div id="boleta-contenido"></div>
+            </div>
+            <div class="modal-gen-footer no-print">
+                <button id="btn-imprimir-boleta" class="btn-modal-ok azul">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button id="btn-cerrar-boleta-footer" class="btn-modal-cancelar">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+{% endblock %}

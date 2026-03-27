@@ -1,0 +1,533 @@
+/* --- CONTENEDOR PRINCIPAL --- */
+.reportes-wrapper {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- HEADER Y FILTROS --- */
+.reportes-header {
+    display: flex;
+    flex-direction: column; /* Alinea el h1 y el p uno debajo del otro */
+    justify-content: center; /* Centra verticalmente si hay espacio */
+    align-items: center;    /* Centra horizontalmente todo el bloque */
+    text-align: center;     /* Asegura que el texto dentro de h1 y p se centre */
+    margin-bottom: 30px;    /* Espacio con las tarjetas */
+    width: 100%;             /* Ocupa todo el ancho */
+}
+.reportes-header p {
+    color: #64748b;
+}
+.header-text h1 {
+    font-size: 2rem;
+    color: #1e293b;
+    margin-bottom: 5px; /* Espacio con la descripción */
+}
+
+.header-text p {
+    color: #64748b;
+    margin: 0; /* Elimina márgenes extra para centrar bien */
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.selector-periodo {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selector-periodo select {
+    border: none;
+    outline: none;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* --- GRID DE TARJETAS (INDICADORES) --- */
+.reportes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.card-metrica {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #f1f5f9;
+}
+
+.card-metrica:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo de los Iconos (Círculos de color) */
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.card-content .label {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.card-content h2 {
+    margin: 5px 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.card-content .trend {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* --- COLORES PERSONALIZADOS (Basados en tu imagen de referencia) --- */
+
+/* Ingresos (Verde/Azul) */
+.card-ingresos .card-icon { background: #10b981; }
+.card-ingresos .trend { color: #059669; }
+
+/* Fiados (Naranja/Ámbar) */
+.card-fiados .card-icon { background: #f59e0b; }
+.card-fiados .trend { color: #d97706; }
+
+/* Productos Muertos (Gris/Azul Oscuro) */
+.card-muertos .card-icon { background: #6366f1; }
+.card-muertos .trend { color: #4f46e5; }
+
+/* A Vencer (Rojo) */
+.card-vencer .card-icon { background: #ef4444; }
+.card-vencer .trend { color: #dc2626; }
+
+/* Configuración (Gris Elegante) */
+.card-config .card-icon { background: #94a3b8; }
+.card-config .trend { color: #64748b; }
+
+/* --- TABLA DE DETALLES --- */
+.reportes-detalle {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f1f5f9;
+}
+
+.detalle-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.tab-link {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.tab-link.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+/* --- ANIMACIÓN --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+#titulo-detalle {
+    margin: 20px 0;
+    color: #1e293b;
+    font-size: 1.2rem;
+}
+.detalle-header {
+    border-bottom: 2px solid #f8fafc;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+/* Estilo del Buscador de Fecha */
+.input-fecha {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-fecha:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* --- Tabla de Reportes --- */
+.tabla-reporte {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.tabla-reporte th {
+    background: #f8fafc;
+    padding: 12px 15px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.tabla-reporte td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+/* Desglose de pagos dentro de la tabla */
+.desglose-pagos span {
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.desglose-pagos i {
+    width: 18px;
+    margin-right: 5px;
+}
+
+.badge-estado {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.btn-accion-tabla:hover i {
+    color: #3b82f6 !important;
+}
+
+/* ── GRID COMPACTO (una fila) ── */
+.reportes-grid-compacto {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.reportes-grid-compacto .card-metrica {
+    padding: 14px;
+    gap: 10px;
+}
+
+.reportes-grid-compacto .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.reportes-grid-compacto .card-content h2 {
+    font-size: 1.2rem;
+    margin: 3px 0;
+}
+
+.reportes-grid-compacto .card-content .label {
+    font-size: 0.75rem;
+}
+
+.reportes-grid-compacto .card-content .trend {
+    font-size: 0.7rem;
+}
+
+/* Tarjeta activa */
+.card-activa {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+    border: 2px solid currentColor;
+}
+
+.card-facturas .card-icon { background: #3b82f6; }
+.card-facturas .trend     { color: #1d4ed8; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .reportes-grid-compacto {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .reportes-grid-compacto {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.card-graficos .card-icon { background: #6366f1; }
+
+/* --- ENCABEZADO DEL PANEL DETALLE --- */
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* --- FILTROS DE SECCIÓN --- */
+.filtro-seccion {
+    align-items: center;
+    gap: 10px;
+}
+
+.filtro-seccion label {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.select-filtro {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    outline: none;
+    background: white;
+}
+
+.btn-nueva-factura {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-nueva-factura:hover { background: #2563eb; }
+
+/* --- PANEL VACÍO INICIAL --- */
+.panel-vacio {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.panel-vacio i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.panel-vacio p { font-size: 1rem; }
+
+/* --- TARJETA ACTIVA (tab seleccionado) --- */
+.card-activa {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px -3px rgba(0,0,0,0.15);
+    outline: 3px solid rgba(255,255,255,0.4);
+}
+
+/* --- PÁGINA DETALLE CIERRE --- */
+.cierre-resultado-wrapper {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.cierre-resultado-card {
+    text-align: center;
+    border: 2px solid #e2e8f0;
+    padding: 30px;
+    border-radius: 15px;
+    background: white;
+}
+
+.cierre-resultado-icono {
+    font-size: 3.5rem;
+    color: #10b981;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.cierre-resultado-card h1 { color: #1e293b; }
+
+.cierre-resultado-card > p { color: #64748b; }
+
+.cierre-resultado-detalle {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.cierre-resultado-fila {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.cierre-resultado-hr {
+    border: 1px dashed #cbd5e1;
+    margin: 15px 0;
+}
+
+.cierre-resultado-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    color: #0f172a;
+}
+
+.cierre-resultado-fiados {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.cierre-resultado-fiados > div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cierre-resultado-fiados small {
+    display: block;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.cierre-resultado-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-imprimir {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    background: white;
+}
+
+.btn-ver-reportes {
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+.card-graficos .trend     { color: #4f46e5; }
+
+/* nuevas tarjetas de movimientos y proveedores */
+.card-movimientos .card-icon { background: #0ea5e9; }
+.card-movimientos .trend     { color: #0284c7; }
+
+.card-proveedores .card-icon { background: #f97316; }
+.card-proveedores .trend     { color: #ea580c; }
+
+/* grid compacto ahora tiene más tarjetas: usar auto-fill */
+.reportes-grid-compacto {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* campos de formulario en modales de reportes */
+.modal-campo-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    background: #f8fafc;
+}
+
+.modal-campo-input:focus { border-color: #3b82f6; }
+
+.modal-campo-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+    background: #f8fafc;
+    transition: border-color 0.2s;
+}
+
+.modal-campo-textarea:focus { border-color: #3b82f6; }
+
+.modal-campo-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    outline: none;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.modal-campo-lbl-small {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.factura-campo { margin-bottom: 14px; }
+
+.factura-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}

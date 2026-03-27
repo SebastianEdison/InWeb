@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reportes-wrapper cierre-resultado-wrapper">
+    <div class="reportes-detalle cierre-resultado-card">
+        <i class="fas fa-check-circle cierre-resultado-icono"></i>
+        <h1>Cierre de Caja Exitoso</h1>
+        <p>Turno finalizado: <strong>{{ cierre.fecha | default('Pendiente') }}</strong></p>
+
+        <div class="cierre-resultado-detalle">
+
+            <div class="cierre-resultado-fila">
+                <span><i class="fas fa-money-bill-wave"></i> Efectivo:</span>
+                <strong>${{ "{:,.0f}".format(cierre.efectivo | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div class="cierre-resultado-fila">
+                <span><i class="far fa-credit-card"></i> Tarjeta:</span>
+                <strong>${{ "{:,.0f}".format(cierre.tarjeta | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div class="cierre-resultado-fila">
+                <span><i class="fas fa-wallet"></i> Otros:</span>
+                <strong>${{ "{:,.0f}".format(cierre.otros | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <hr class="cierre-resultado-hr">
+
+            <div class="cierre-resultado-total">
+                <strong>TOTAL EN CAJA:</strong>
+                <strong>${{ "{:,.0f}".format(cierre.total | default(0)).replace(",", ".") }}</strong>
+            </div>
+
+            <div class="cierre-resultado-fiados">
+                <div>
+                    <span><i class="fas fa-user-tag"></i> Fiados (Deuda):</span>
+                    <span>${{ "{:,.0f}".format(cierre.fiados | default(0)).replace(",", ".") }}</span>
+                </div>
+                <small>* No incluido en el total de caja.</small>
+            </div>
+        </div>
+
+        <div class="cierre-resultado-acciones">
+            <button onclick="window.print()" class="btn-imprimir">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="/reportes" class="btn-ver-reportes">Ir a Reportes</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

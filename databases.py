@@ -1,15 +1,22 @@
 import sqlite3
 import hashlib
 import pytz
+import sys
+import os
 from datetime import datetime
 
 tz_chile = pytz.timezone('America/Santiago')
 fecha_chile = datetime.now(tz_chile).strftime('%Y-%m-%d %H:%M:%S')
 
+def get_app_dir():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
 def conectar():
-    conexion =sqlite3.connect("inventario.db")
-    conexion.row_factory =sqlite3.Row
-    #print("Base de datos conectada")
+    db_path = os.path.join(get_app_dir(), 'inventario.db')
+    conexion = sqlite3.connect(db_path)
+    conexion.row_factory = sqlite3.Row
     return conexion
 
 def crear_tablas():
@@ -662,7 +669,7 @@ def generar_reporte_excel(datos_cierre):
     from datetime import datetime
 
     # Crear carpeta reportes si no existe
-    carpeta = os.path.join(os.path.dirname(__file__), 'reportes')
+    carpeta = os.path.join(get_app_dir(), 'reportes')
     os.makedirs(carpeta, exist_ok=True)
 
     # Nombre del archivo con fecha y hora

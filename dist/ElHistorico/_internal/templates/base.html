@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EL HISTORICO{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- barra superior: logo, navegación y usuario -->
+    <header class="topbar-nivel1">
+        <div class="topbar-nivel1-inner">
+
+            <h2 class="app-logo">🏪 EL HISTORICO</h2>
+
+            <nav class="top-nav">
+                <ul class="nav-menu">
+                    <li class="{{ 'active' if request.path == '/' }}">
+                        <a href="/"><i class="fas fa-boxes"></i> Inventario</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/agregar' }}">
+                        <a href="/agregar"><i class="fas fa-plus-circle"></i> Agregar</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/ventas' }}">
+                        <a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a>
+                    </li>
+                    <li class="{{ 'active' if request.path == '/reportes' }}">
+                        <a href="/reportes"><i class="fas fa-chart-bar"></i> Reportes</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="topbar-usuario">
+                <i class="fas fa-user-circle"></i>
+                <span class="usuario-nombre">{{ session.get('nombre', '') }}</span>
+                {% if session.get('rol') == 'admin' %}
+                    <span class="badge-admin">ADMIN</span>
+                {% endif %}
+                <span class="usuario-separador"></span>
+                <a href="/logout"
+                   onclick="return confirmarLogout()"
+                   class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+    <div class="top-bar-line2">
+        {% block topbar_stats %}{% endblock %}
+    </div>
+
+    <!-- contenido principal -->
+    <main class="main-content-master">
+        <div class="container-fluid-custom">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% block scripts %}{% endblock %}
+
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+
+    <!-- modal cambiar contraseña -->
+    <div id="modal-password" class="modal-gen">
+        <div class="modal-gen-box w-sm">
+
+            <div class="modal-gen-header mh-blue">
+                <h2><i class="fas fa-lock"></i> Cambiar Contraseña</h2>
+                <span class="btn-cerrar-modal" onclick="cerrarModalPassword()">&times;</span>
+            </div>
+
+            <div class="modal-gen-body">
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-lock"></i> Contraseña Actual
+                    </label>
+                    <input type="password" id="pwd-actual" placeholder="••••••••" class="pwd-input">
+                </div>
+
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-key"></i> Nueva Contraseña
+                    </label>
+                    <input type="password" id="pwd-nueva" placeholder="••••••••" class="pwd-input">
+                </div>
+
+                <div class="pwd-campo">
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-key"></i> Confirmar Nueva Contraseña
+                    </label>
+                    <input type="password" id="pwd-confirma" placeholder="••••••••"
+                           onkeydown="if(event.key==='Enter') confirmarCambioPassword()"
+                           class="pwd-input">
+                </div>
+
+                <p id="pwd-error" class="pwd-error"></p>
+            </div>
+
+            <div class="modal-gen-footer">
+                <button onclick="cerrarModalPassword()" class="btn-modal-cancelar">Cancelar</button>
+                <button onclick="confirmarCambioPassword()" class="btn-modal-ok azul">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <span>EL HISTORICO &copy; 2026</span>
+        <span class="app-footer-sep">|</span>
+        <span>Desarrollado por <strong>Sebastian Toledo</strong></span>
+        <span class="app-footer-sep">|</span>
+        <span>Sistema de Gestión de Inventario</span>
+    </footer>
+</body>
+</html>

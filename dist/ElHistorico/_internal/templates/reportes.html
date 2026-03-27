@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="reportes-wrapper">
+
+    <div class="reportes-header">
+        <div class="header-text">
+            <h1>Panel de Control</h1>
+            <p>Estado general del negocio y alertas</p>
+        </div>
+    </div>
+
+    <!-- tarjetas de navegación -->
+    <div class="reportes-grid-compacto">
+
+        <div class="card-metrica card-ingresos" onclick="mostrarSeccion('diario')" id="tab-diario">
+            <div class="card-icon"><i class="fas fa-cash-register"></i></div>
+            <div class="card-content">
+                <span class="label">Ventas Diarias</span>
+                <h2 id="rep-ingresos">$0</h2>
+                <span class="trend">Turno actual</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-fiados" onclick="mostrarSeccion('fiados')" id="tab-fiados">
+            <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+            <div class="card-content">
+                <span class="label">Fiados</span>
+                <h2 id="rep-fiados">$0</h2>
+                <span class="trend">Pendiente de cobro</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-graficos" onclick="mostrarSeccion('graficos')" id="tab-graficos">
+            <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+            <div class="card-content">
+                <span class="label">Gráficos</span>
+                <h2>Análisis</h2>
+                <span class="trend">Visual del negocio</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-facturas" onclick="mostrarSeccion('facturas')" id="tab-facturas">
+            <div class="card-icon"><i class="fas fa-file-invoice"></i></div>
+            <div class="card-content">
+                <span class="label">Facturas</span>
+                <h2 id="rep-facturas">0</h2>
+                <span class="trend">Pendientes de pago</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-muertos" onclick="mostrarSeccion('muertos')" id="tab-muertos">
+            <div class="card-icon"><i class="fas fa-ghost"></i></div>
+            <div class="card-content">
+                <span class="label">Prod. Muertos</span>
+                <h2 id="rep-muertos">0</h2>
+                <span class="trend">Sin venta > 60 días</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-vencer" onclick="mostrarSeccion('vencer')" id="tab-vencer">
+            <div class="card-icon"><i class="fas fa-calendar-times"></i></div>
+            <div class="card-content">
+                <span class="label">Por Vencer</span>
+                <h2 id="rep-vencer">0</h2>
+                <span class="trend">Próximos a vencer</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-config" onclick="mostrarSeccion('config')" id="tab-config">
+            <div class="card-icon"><i class="fas fa-cog"></i></div>
+            <div class="card-content">
+                <span class="label">Configuración</span>
+                <h2>Ajustes</h2>
+                <span class="trend">Sistema y usuarios</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-movimientos" onclick="mostrarSeccion('movimientos')" id="tab-movimientos">
+            <div class="card-icon"><i class="fas fa-exchange-alt"></i></div>
+            <div class="card-content">
+                <span class="label">Movimientos</span>
+                <h2>Stock</h2>
+                <span class="trend">Historial de cambios</span>
+            </div>
+        </div>
+
+        <div class="card-metrica card-proveedores" onclick="mostrarSeccion('proveedores')" id="tab-proveedores">
+            <div class="card-icon"><i class="fas fa-truck"></i></div>
+            <div class="card-content">
+                <span class="label">Proveedores</span>
+                <h2 id="rep-proveedores">0</h2>
+                <span class="trend">Gestión de contactos</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- panel de detalle -->
+    <div class="reportes-detalle">
+        <div class="tabla-container">
+
+            <div class="detalle-header">
+                <h3 id="titulo-detalle">Selecciona una tarjeta para ver detalle</h3>
+
+                <!-- filtro ventas diarias -->
+                <div id="filtro-fecha" style="display:none;" class="filtro-seccion">
+                    <label>Ver fecha:</label>
+                    <input type="date" id="fecha-busqueda" class="input-fecha">
+                </div>
+
+                <!-- filtro fiados -->
+                <div id="filtro-fiados" style="display:none;" class="filtro-seccion">
+                    <label>Mostrar:</label>
+                    <select id="filtro-estado-fiados" class="select-filtro"
+                            onchange="cargarFiados()">
+                        <option value="pendientes">Pendientes y parciales</option>
+                        <option value="todos">Todos</option>
+                        <option value="pagados">Solo pagados</option>
+                    </select>
+                </div>
+
+                <!-- filtro facturas -->
+                <div id="filtro-facturas" style="display:none;" class="filtro-seccion">
+                    <select id="filtro-estado-facturas" class="select-filtro"
+                            onchange="cargarFacturas()">
+                        <option value="pendientes">Pendientes</option>
+                        <option value="todas">Todas</option>
+                        <option value="pagadas">Pagadas</option>
+                    </select>
+                    <button onclick="abrirModalFactura()" class="btn-nueva-factura">
+                        <i class="fas fa-plus"></i> Nueva Factura
+                    </button>
+                </div>
+
+                <!-- filtro productos muertos -->
+                <div id="filtro-muertos" style="display:none;" class="filtro-seccion">
+                    <label>Sin venta hace más de:</label>
+                    <select id="filtro-dias-muertos" class="select-filtro"
+                            onchange="cargarProductosMuertos()">
+                        <option value="30">30 días</option>
+                        <option value="60" selected>60 días</option>
+                        <option value="90">90 días</option>
+                    </select>
+                </div>
+
+                <!-- filtro vencimiento -->
+                <div id="filtro-vencer" style="display:none;" class="filtro-seccion">
+                    <label>Próximos:</label>
+                    <select id="filtro-dias-vencer" class="select-filtro"
+                            onchange="cargarProductosPorVencer()">
+                        <option value="7">7 días</option>
+                        <option value="15">15 días</option>
+                        <option value="30">30 días</option>
+                    </select>
+                </div>
+
+                <!-- filtro movimientos -->
+                <div id="filtro-movimientos" style="display:none;" class="filtro-seccion">
+                    <button id="btn-abrir-ajuste" class="btn-nueva-factura">
+                        <i class="fas fa-plus"></i> Ajuste Manual
+                    </button>
+                </div>
+
+                <!-- filtro proveedores -->
+                <div id="filtro-proveedores" style="display:none;" class="filtro-seccion">
+                    <button id="btn-abrir-proveedor" class="btn-nueva-factura">
+                        <i class="fas fa-plus"></i> Nuevo Proveedor
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- tabla dinámica -->
+            <table class="tabla-reporte" id="tabla-principal" style="display:none;">
+                <thead><tr id="tabla-header"></tr></thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+
+            <!-- panel configuración -->
+            <div id="panel-config" style="display:none;"></div>
+
+            <!-- estado vacío inicial -->
+            <div id="panel-vacio" class="panel-vacio">
+                <i class="fas fa-hand-point-up"></i>
+                <p>Selecciona una tarjeta para ver el detalle</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- modal saldar fiado -->
+<div id="modal-saldar" class="modal-gen">
+    <div class="modal-gen-box w-md">
+        <div class="modal-gen-header mh-yellow">
+            <h2><i class="fas fa-hand-holding-usd"></i> Registrar Pago</h2>
+            <span class="btn-cerrar-modal" onclick="cerrarModalSaldar()">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <input type="hidden" id="saldar-id">
+            <div class="modal-info-box gris">
+                <p class="modal-lbl-muted">Cliente</p>
+                <strong id="saldar-nombre" class="modal-nombre-destacado"></strong>
+                <p class="modal-saldo-pendiente">
+                    Saldo: <span id="saldar-saldo">$0</span>
+                </p>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl">
+                    <i class="fas fa-dollar-sign"></i> Monto a cancelar
+                </label>
+                <div class="modal-monto-wrapper" id="saldar-wrapper">
+                    <span class="modal-monto-prefix">$</span>
+                    <input type="number" id="saldar-monto" placeholder="0" step="1" min="1"
+                           onfocus="document.getElementById('saldar-wrapper').style.borderColor='#f59e0b'"
+                           onblur="document.getElementById('saldar-wrapper').style.borderColor='#e2e8f0'"
+                           class="modal-monto-input sm">
+                </div>
+            </div>
+        </div>
+        <div class="modal-gen-footer">
+            <button onclick="cerrarModalSaldar()" class="btn-modal-cancelar">Cancelar</button>
+            <button onclick="confirmarSaldar()" class="btn-modal-ok amarillo">
+                <i class="fas fa-check"></i> Confirmar Pago
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- modal nueva factura -->
+<div id="modal-factura" class="modal-gen">
+    <div class="modal-gen-box w-lg">
+        <div class="modal-gen-header mh-blue sticky">
+            <h2><i class="fas fa-file-invoice"></i> Nueva Factura</h2>
+            <span class="btn-cerrar-modal" onclick="cerrarModalFactura()">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <div class="factura-form-grid">
+                <div>
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-hashtag"></i> N° Factura
+                    </label>
+                    <input type="text" id="fac-numero" placeholder="Ej: 001234"
+                           class="modal-campo-input">
+                </div>
+                <div>
+                    <label class="modal-campo-lbl-small">
+                        <i class="fas fa-calendar"></i> Fecha
+                    </label>
+                    <input type="date" id="fac-fecha" class="modal-campo-input">
+                </div>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">
+                    <i class="fas fa-store"></i> Proveedor
+                </label>
+                <input type="text" id="fac-proveedor" placeholder="Nombre del proveedor"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">
+                    <i class="fas fa-id-card"></i> RUT Proveedor
+                </label>
+                <input type="text" id="fac-rut" placeholder="Ej: 12.345.678-9"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">
+                    <i class="fas fa-dollar-sign"></i> Monto Total ($)
+                </label>
+                <input type="number" id="fac-monto" placeholder="0" step="1" min="0"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">
+                    <i class="fas fa-box"></i> Productos comprados
+                </label>
+                <textarea id="fac-productos" placeholder="Ej: 10x Leche, 5x Pan..." rows="3"
+                          class="modal-campo-textarea"></textarea>
+            </div>
+            <div>
+                <label class="modal-campo-lbl-small">
+                    <i class="fas fa-flag"></i> Estado
+                </label>
+                <select id="fac-estado" class="modal-campo-select">
+                    <option value="pendiente">Pendiente de pago</option>
+                    <option value="pagada">Pagada</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-gen-footer sticky">
+            <button onclick="cerrarModalFactura()" class="btn-modal-cancelar">Cancelar</button>
+            <button onclick="guardarFactura()" class="btn-modal-ok azul">
+                <i class="fas fa-save"></i> Guardar Factura
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- modal detalle fiado -->
+<div id="modal-detalle-fiado" class="modal-gen">
+    <div class="modal-gen-box w-md">
+        <div class="modal-gen-header mh-yellow">
+            <h2><i class="fas fa-user-clock"></i> Detalle del Fiado</h2>
+            <span class="btn-cerrar-modal" onclick="cerrarModalDetalleFiado()">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <div class="modal-info-box gris">
+                <p class="modal-lbl-muted">Cliente</p>
+                <strong id="df-nombre" class="modal-nombre-destacado"></strong>
+                <p class="modal-lbl-muted" style="margin-top:4px;">Fecha: <span id="df-fecha"></span></p>
+                <div style="margin-top:6px;" id="df-estado"></div>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small"><i class="fas fa-list"></i> Productos</label>
+                <div id="df-items" style="padding:4px 0;"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:8px; text-align:center;">
+                <div style="background:#f8fafc; border-radius:10px; padding:10px;">
+                    <p class="modal-lbl-muted">Total</p>
+                    <strong id="df-total" style="font-size:1rem; color:#1e293b;"></strong>
+                </div>
+                <div style="background:#f0fdf4; border-radius:10px; padding:10px;">
+                    <p class="modal-lbl-muted">Pagado</p>
+                    <strong id="df-pagado" style="font-size:1rem; color:#10b981;"></strong>
+                </div>
+                <div style="background:#fff5f5; border-radius:10px; padding:10px;">
+                    <p class="modal-lbl-muted">Saldo</p>
+                    <strong id="df-saldo" style="font-size:1rem;"></strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-gen-footer">
+            <button onclick="cerrarModalDetalleFiado()" class="btn-modal-ok azul">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- modal detalle factura -->
+<div id="modal-detalle-factura" class="modal-gen">
+    <div class="modal-gen-box w-md">
+        <div class="modal-gen-header mh-blue">
+            <h2><i class="fas fa-file-invoice"></i> Detalle de Factura</h2>
+            <span class="btn-cerrar-modal" onclick="cerrarModalDetalleFactura()">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <div class="modal-info-box azul">
+                <p class="modal-lbl-muted">N° Factura</p>
+                <strong id="dfac-numero" class="modal-nombre-destacado"></strong>
+                <div style="margin-top:6px;" id="dfac-estado"></div>
+            </div>
+            <div class="factura-form-grid">
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-store"></i> Proveedor</label>
+                    <p id="dfac-proveedor" style="font-weight:600; color:#334155; margin:4px 0;"></p>
+                </div>
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-id-card"></i> RUT</label>
+                    <p id="dfac-rut" style="color:#64748b; margin:4px 0;"></p>
+                </div>
+            </div>
+            <div class="factura-form-grid">
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-calendar"></i> Fecha</label>
+                    <p id="dfac-fecha" style="color:#64748b; margin:4px 0;"></p>
+                </div>
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-dollar-sign"></i> Monto Total</label>
+                    <p id="dfac-monto" style="font-weight:700; font-size:1.1rem; color:#1e293b; margin:4px 0;"></p>
+                </div>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small"><i class="fas fa-box"></i> Productos</label>
+                <p id="dfac-productos" style="color:#64748b; font-size:0.9rem; white-space:pre-wrap; margin:4px 0;"></p>
+            </div>
+        </div>
+        <div class="modal-gen-footer">
+            <button onclick="cerrarModalDetalleFactura()" class="btn-modal-ok azul">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- modal ajuste manual de stock -->
+<div id="modal-ajuste-stock" class="modal-gen">
+    <div class="modal-gen-box w-md">
+        <div class="modal-gen-header mh-gray">
+            <h2><i class="fas fa-exchange-alt"></i> Ajuste Manual de Stock</h2>
+            <span class="btn-cerrar-modal" id="btn-cerrar-ajuste">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <div class="factura-campo">
+                <label class="modal-campo-lbl">
+                    <i class="fas fa-search"></i> Buscar Producto
+                </label>
+                <input type="text" id="ajuste-buscar" placeholder="Nombre del producto..."
+                       class="modal-campo-input" autocomplete="off">
+                <div id="ajuste-sugerencias" class="ajuste-sugerencias-lista"></div>
+                <input type="hidden" id="ajuste-producto-id">
+                <p id="ajuste-producto-nombre" class="ajuste-producto-seleccionado"></p>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl">
+                    <i class="fas fa-sort-numeric-up"></i> Cantidad (+ entrada / - salida)
+                </label>
+                <input type="number" id="ajuste-cantidad" placeholder="Ej: 10 ó -5"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl">
+                    <i class="fas fa-comment"></i> Motivo
+                </label>
+                <input type="text" id="ajuste-motivo" placeholder="Ej: Compra a proveedor"
+                       class="modal-campo-input">
+            </div>
+        </div>
+        <div class="modal-gen-footer">
+            <button id="btn-cancelar-ajuste" class="btn-modal-cancelar">Cancelar</button>
+            <button id="btn-confirmar-ajuste" class="btn-modal-ok azul">
+                <i class="fas fa-check"></i> Confirmar Ajuste
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- modal nuevo proveedor -->
+<div id="modal-nuevo-proveedor" class="modal-gen">
+    <div class="modal-gen-box w-md">
+        <div class="modal-gen-header mh-blue sticky">
+            <h2><i class="fas fa-truck"></i> Proveedor</h2>
+            <span class="btn-cerrar-modal" id="btn-cerrar-proveedor">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <input type="hidden" id="prov-id">
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small"><i class="fas fa-store"></i> Nombre *</label>
+                <input type="text" id="prov-nombre" placeholder="Nombre del proveedor"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-form-grid">
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-id-card"></i> RUT</label>
+                    <input type="text" id="prov-rut" placeholder="12.345.678-9"
+                           class="modal-campo-input">
+                </div>
+                <div>
+                    <label class="modal-campo-lbl-small"><i class="fas fa-phone"></i> Teléfono</label>
+                    <input type="text" id="prov-telefono" placeholder="+56 9 1234 5678"
+                           class="modal-campo-input">
+                </div>
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small"><i class="fas fa-envelope"></i> Email</label>
+                <input type="text" id="prov-email" placeholder="contacto@proveedor.cl"
+                       class="modal-campo-input">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small"><i class="fas fa-sticky-note"></i> Notas</label>
+                <textarea id="prov-notas" placeholder="Condiciones de pago, días de entrega..."
+                          rows="2" class="modal-campo-textarea"></textarea>
+            </div>
+        </div>
+        <div class="modal-gen-footer sticky">
+            <button id="btn-cancelar-proveedor" class="btn-modal-cancelar">Cancelar</button>
+            <button id="btn-guardar-proveedor" class="btn-modal-ok azul">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- modal cambio de contraseña -->
+<div id="modal-password" class="modal-gen">
+    <div class="modal-gen-box w-sm">
+        <div class="modal-gen-header mh-gray">
+            <h2><i class="fas fa-lock"></i> Cambiar Contraseña</h2>
+            <span class="btn-cerrar-modal" onclick="cerrarModalPassword()">&times;</span>
+        </div>
+        <div class="modal-gen-body">
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">Contraseña actual</label>
+                <input type="password" id="pwd-actual" class="modal-campo-input" placeholder="••••••">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">Contraseña nueva</label>
+                <input type="password" id="pwd-nueva" class="modal-campo-input" placeholder="••••••">
+            </div>
+            <div class="factura-campo">
+                <label class="modal-campo-lbl-small">Confirmar nueva</label>
+                <input type="password" id="pwd-confirma" class="modal-campo-input" placeholder="••••••">
+            </div>
+            <p id="pwd-error" class="modal-error-msg" style="display:none;"></p>
+        </div>
+        <div class="modal-gen-footer">
+            <button onclick="cerrarModalPassword()" class="btn-modal-cancelar">Cancelar</button>
+            <button onclick="confirmarCambioPassword()" class="btn-modal-ok azul">
+                <i class="fas fa-check"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/reportes.js') }}"></script>
+{% endblock %}

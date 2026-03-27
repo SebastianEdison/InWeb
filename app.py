@@ -1,8 +1,16 @@
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_file
-import sqlite3, os, shutil, threading
+import sqlite3, os, sys, shutil, threading, webbrowser, time
 from functools import wraps
 from datetime import datetime, timedelta
 import pytz
+
+# rutas según si corre como exe o como script normal
+if getattr(sys, 'frozen', False):
+    _BASE_DIR   = os.path.dirname(sys.executable)   # carpeta del .exe (datos persistentes)
+    _BUNDLE_DIR = sys._MEIPASS                       # carpeta temporal (templates, static, código)
+else:
+    _BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+    _BUNDLE_DIR = _BASE_DIR
 
 from databases import (
     obtener_productos, eliminar_producto, actualizar_producto,
@@ -15,7 +23,11 @@ from databases import (
     obtener_proveedores_db, guardar_proveedor_db, eliminar_proveedor_db
 )
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(_BUNDLE_DIR, 'templates'),
+    static_folder=os.path.join(_BUNDLE_DIR, 'static')
+)
 app.secret_key = 'clave_secreta'
 app.permanent_session_lifetime = timedelta(hours=12)
 tz_chile = pytz.timezone('America/Santiago')
@@ -114,6 +126,14 @@ def api_productos_por_vencer():
 # --- VARIABLE TEMPORAL SOLO PARA EL TICKET ACTUAL ---
 cierre_reciente_ticket = {} 
 
+def _es_stock_bajo(p):
+    stock = p['stock']
+    if stock <= 0:
+        return False
+    if p['stock_minimo'] and p['stock_minimo'] > 0:
+        return stock <= p['stock_minimo']
+    return stock <= 3
+
 # --- RUTA PRINCIPAL (INVENTARIO) ---
 @app.route('/')
 @login_requerido
@@ -129,10 +149,10 @@ def index():
         productos_db = [p for p in productos_db if p['categoria'] == categoria_filter]
 
     if solo_bajo_stock:
-        productos_db = [p for p in productos_db if p['stock_minimo'] and p['stock_minimo'] > 0 and p['stock'] <= p['stock_minimo']]
+        productos_db = [p for p in productos_db if _es_stock_bajo(p)]
 
     todos = obtener_productos(None)
-    alertas_count = sum(1 for p in todos if p['stock'] > 0 and p['stock_minimo'] and p['stock_minimo'] > 0 and p['stock'] <= p['stock_minimo'])
+    alertas_count = sum(1 for p in todos if _es_stock_bajo(p))
 
     # lista de categorías distintas para mostrar filtros
     categorias_set = sorted({p['categoria'] for p in todos if p['categoria']})
@@ -727,9 +747,9 @@ def api_eliminar_proveedor():
 
 # Feature 8: backup automático diario
 def hacer_backup_automatico():
-    backup_dir = os.path.join(os.path.dirname(__file__), 'backups')
+    backup_dir = os.path.join(_BASE_DIR, 'backups')
     os.makedirs(backup_dir, exist_ok=True)
-    db_path = os.path.join(os.path.dirname(__file__), 'inventario.db')
+    db_path = os.path.join(_BASE_DIR, 'inventario.db')
     tz = pytz.timezone('America/Santiago')
     fecha = datetime.now(tz).strftime('%Y-%m-%d')
     dest = os.path.join(backup_dir, f'backup_{fecha}.db')
@@ -746,7 +766,13 @@ def hacer_backup_automatico():
     timer.start()
 
 
+def _abrir_navegador():
+    time.sleep(1.5)
+    webbrowser.open('http://127.0.0.1:5000')
+
 if __name__ == '__main__':
     crear_tablas()
     hacer_backup_automatico()
-    app.run(debug=True)
+    t = threading.Thread(target=_abrir_navegador, daemon=True)
+    t.start()
+    app.run(debug=False, host='127.0.0.1', port=5000)

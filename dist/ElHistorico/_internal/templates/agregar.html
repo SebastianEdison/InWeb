@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Ingreso de Mercadería - Mi Negocio{% endblock %}
+
+{% block topbar_stats %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="header-seccion-central">
+    <h1><i class="fas fa-boxes"></i> Ingreso de Mercadería</h1>
+    <p>Escanee productos para registrar o actualizar stock en el inventario</p>
+</div>
+
+<div class="registro-wrapper">
+    <div class="panel-configuracion">
+        <div class="seccion-header">
+            <span class="paso-numero">1</span>
+            <h3>Tipo de Ingreso</h3>
+        </div>
+
+        <div class="tipo-selector-vertical">
+            <div class="metodo-item active" id="btn-con-codigo" onclick="seleccionarTipo('codigo')">
+                <i class="fas fa-barcode"></i>
+                <div class="metodo-texto">
+                    <strong>Con Código</strong>
+                    <p>Productos con etiqueta</p>
+                </div>
+            </div>
+
+            <div class="metodo-item" id="btn-por-peso" onclick="seleccionarTipo('peso')">
+                <i class="fas fa-balance-scale"></i>
+                <div class="metodo-texto">
+                    <strong>Peso / Granel</strong>
+                    <p>Kuchen, pan, frutas, etc.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="identificador-area">
+            <label class="lbl-generico">Identificación del Producto</label>
+            <div class="search-box-modern">
+                <input type="text" id="codigo_search" placeholder="Escanea el código..." autofocus autocomplete="off">
+                <i class="fas fa-search icon-search-inside"></i>
+            </div>
+            <small id="helper-identificador">El lector está listo para escanear</small>
+            <input type="hidden" id="tipo_registro_actual" value="codigo">
+        </div>
+    </div>
+
+    <div class="panel-formulario">
+        <div class="seccion-header">
+            <span class="paso-numero">2</span>
+            <h3>Información Detallada</h3>
+        </div>
+
+        <form id="form-ingreso-completo" onsubmit="procesarIngreso(event)">
+            <div class="form-group-full">
+                <label class="lbl-blue"><i class="fas fa-tag"></i> Nombre del Producto</label>
+                <input type="text" id="form_nombre" required placeholder="Ej: Kuchen de Manzana">
+            </div>
+
+            <div class="form-grid-precios">
+                <div class="form-group">
+                    <label class="lbl-green"><i class="fas fa-arrow-down"></i> P. Compra</label>
+                    <input type="number" id="form_pcompra" step="any" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-orange"><i class="fas fa-arrow-up"></i> P. Venta</label>
+                    <input type="number" id="form_pventa" step="any" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <div class="stock-container-modern">
+                <div class="input-grupal-stock">
+                    <div class="form-group" id="columna-cantidad">
+                        <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
+                        <input type="number" id="form_stock" placeholder="0">
+                    </div>
+
+                    <div class="form-group" id="contenedor-medida">
+                        <label class="lbl-blue"><i class="fas fa-weight"></i> Medida</label>
+                        <select id="form_unidad" class="select-moderno">
+                            <option value="Unidad">Unidad</option>
+                            <option value="Kg">Kilogramo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="opcion-sin-stock">
+                    <label class="switch-container">
+                        <input type="checkbox" id="chk_venta_libre">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="switch-texto">
+                        <strong>Venta Libre / Sin Stock</strong>
+                        <p>Para productos que no requieren inventario</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid-precios">
+                <div class="form-group">
+                    <label class="lbl-orange"><i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                        <span class="lbl-opcional">(alerta)</span>
+                    </label>
+                    <input type="number" id="form_stock_minimo" placeholder="0" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="lbl-blue"><i class="fas fa-tag"></i> Categoría</label>
+                    <select id="form_categoria" class="select-moderno">
+                        <option value="General">General</option>
+                        <option value="Lácteos">Lácteos</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Panadería">Panadería</option>
+                        <option value="Carnes">Carnes</option>
+                        <option value="Limpieza">Limpieza</option>
+                        <option value="Confites">Confites</option>
+                        <option value="Frutas y Verduras">Frutas y Verduras</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group-full" id="contenedor-vencimiento">
+                <label class="lbl-blue">
+                    <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
+                    <span class="lbl-opcional">(opcional)</span>
+                </label>
+                <input type="date" id="form_vencimiento">
+                <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
+            </div>
+
+            <div class="form-acciones">
+                <button type="submit" class="btn-guardar-pro">
+                    <i class="fas fa-check-circle"></i> REGISTRAR PRODUCTO EN SISTEMA
+                </button>
+                <button type="button" class="btn-limpiar-pro" onclick="resetearTodo()">
+                    <i class="fas fa-undo"></i> Limpiar Todo
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+{% endblock %}
