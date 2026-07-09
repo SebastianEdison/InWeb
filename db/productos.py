@@ -25,9 +25,11 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
             else:
                 fecha_final = fecha_vencimiento or fecha_anterior
 
+            # activo=1 por si el codigo pertenecia a un producto eliminado (soft-delete): revive en vez
+            # de quedar invisible para siempre, ya que codigo_barra es UNIQUE y no se puede duplicar.
             cursor.execute("""
                 UPDATE productos
-                SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?
+                SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?, activo=1
                 WHERE id=?
             """, (nombre, precio, costo, nuevo_total, unidad, fecha_final, stock_minimo, categoria, id_producto))
             print(f"Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
@@ -53,7 +55,7 @@ def obtener_productos(nombre_buscar=None, categoria=None):
     cursor = conexion.cursor()
 
     try:
-        condiciones = []
+        condiciones = ["activo = 1"]
         params = []
 
         if nombre_buscar:
@@ -65,9 +67,7 @@ def obtener_productos(nombre_buscar=None, categoria=None):
             condiciones.append("categoria = ?")
             params.append(categoria)
 
-        sql = "SELECT * FROM productos"
-        if condiciones:
-            sql += " WHERE " + " AND ".join(condiciones)
+        sql = "SELECT * FROM productos WHERE " + " AND ".join(condiciones)
 
         cursor.execute(sql, params)
         resultados = cursor.fetchall()
@@ -168,10 +168,12 @@ def actualizar_producto(id_p, nombre, precio, costo, stock, unidad='Unidad', fec
         conexion.close()
 
 def eliminar_producto(id_recibido):
+    # Soft-delete: si el producto tiene ventas o movimientos de stock en su historial,
+    # borrarlo de verdad dejaria esos registros huerfanos y desaparecerian de reportes pasados.
     conexion = conectar()
     cursor = conexion.cursor()
 
-    cursor.execute("DELETE FROM productos WHERE id = ?", (id_recibido,))
+    cursor.execute("UPDATE productos SET activo = 0 WHERE id = ?", (id_recibido,))
 
     conexion.commit()
     conexion.close()

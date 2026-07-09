@@ -158,3 +158,32 @@ def test_reponer_stock_conserva_la_fecha_de_vencimiento_mas_proxima(client):
     productos = client.get('/buscar_producto?busqueda=Yogurt').get_json()
     assert productos[0]['stock'] == 10
     assert productos[0]['fecha_vencimiento'] == '2026-08-01'  # la mas proxima, no la ultima cargada
+
+def test_eliminar_producto_es_soft_delete(client):
+    login(client)
+    client.post('/agregar', json={
+        'codigo': '666', 'nombre': 'Descontinuado', 'precio_venta': 700,
+        'precio_compra': 300, 'stock': 4,
+    })
+    producto_id = client.get('/buscar_producto?busqueda=Descontinuado').get_json()[0]['id']
+
+    resp = client.post(f'/eliminar/{producto_id}')
+    assert resp.status_code == 302
+
+    # desaparece de la busqueda normal
+    assert client.get('/buscar_producto?busqueda=Descontinuado').get_json() == []
+
+    # pero el registro sigue existiendo (no se borro en duro)
+    with client.application.app_context():
+        from db.productos import obtener_producto_por_id
+        assert obtener_producto_por_id(producto_id) is not None
+
+    # si se vuelve a usar el mismo codigo de barra, se reactiva en vez de fallar por UNIQUE
+    resp = client.post('/agregar', json={
+        'codigo': '666', 'nombre': 'Descontinuado', 'precio_venta': 700,
+        'precio_compra': 300, 'stock': 2,
+    })
+    assert resp.get_json()['status'] == 'success'
+    productos = client.get('/buscar_producto?busqueda=Descontinuado').get_json()
+    assert len(productos) == 1
+    assert productos[0]['stock'] == 6
