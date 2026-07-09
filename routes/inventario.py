@@ -6,6 +6,7 @@ from db.productos import (
     obtener_productos_por_vencer, obtener_historial_stock_db, ajuste_manual_stock_db,
 )
 from utils.decorators import login_requerido
+from utils.errores import respuesta_error
 
 inventario_bp = Blueprint('inventario', __name__)
 
@@ -168,4 +169,4 @@ def api_ajuste_stock():
             return jsonify({"status": "success", "message": msg})
         return jsonify({"status": "error", "message": msg}), 400
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 
 from db.ventas import registrar_venta, anular_venta_db, obtener_ventas_por_dia
 from utils.decorators import login_requerido
+from utils.errores import respuesta_error
 
 ventas_bp = Blueprint('ventas', __name__)
 
@@ -32,8 +33,7 @@ def api_registrar_venta():
             return jsonify({"status": "error", "message": resultado}), 400
 
     except Exception as e:
-        print(f"Error en api_registrar_venta: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @ventas_bp.route('/api/anular_venta', methods=['POST'])
 @login_requerido
@@ -46,7 +46,7 @@ def api_anular_venta():
             return jsonify({"status": "success"})
         return jsonify({"status": "error", "message": msg}), 400
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @ventas_bp.route('/api/ventas_por_dia')
 @login_requerido

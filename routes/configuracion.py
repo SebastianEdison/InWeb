@@ -7,6 +7,7 @@ from db.config import obtener_config_db, guardar_config_db
 from db.usuarios import cambiar_password_db
 from db.conexion import get_app_dir
 from utils.decorators import login_requerido, solo_admin
+from utils.errores import respuesta_error
 
 configuracion_bp = Blueprint('configuracion', __name__)
 
@@ -29,7 +30,7 @@ def api_guardar_config():
         guardar_config_db(data)
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @configuracion_bp.route('/api/cambiar_password', methods=['POST'])
 @login_requerido
@@ -57,7 +58,7 @@ def api_cambiar_password():
             return jsonify({"status": "error", "message": mensaje}), 400
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @configuracion_bp.route('/api/respaldo_db')
 @login_requerido
@@ -72,4 +73,4 @@ def api_respaldo_db():
             mimetype='application/octet-stream'
         )
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)

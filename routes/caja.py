@@ -7,6 +7,7 @@ from db.fiados import guardar_fiado_db, obtener_fiados_db, saldar_fiado_db
 from db.config import obtener_config_db
 from db.reportes import generar_reporte_excel
 from utils.decorators import login_requerido
+from utils.errores import respuesta_error
 
 caja_bp = Blueprint('caja', __name__)
 
@@ -52,8 +53,7 @@ def guardar_cierre():
         return jsonify({"status": "success"})
 
     except Exception as e:
-        print(f"Error al guardar cierre: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @caja_bp.route('/api/historial')
 @login_requerido
@@ -84,7 +84,7 @@ def api_guardar_fiado():
         return jsonify({"status": "success"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @caja_bp.route('/api/obtener_fiados')
 @login_requerido
@@ -114,4 +114,4 @@ def api_saldar_fiado():
             return jsonify({"status": "error", "message": estado}), 400
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)

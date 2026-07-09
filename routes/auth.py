@@ -5,6 +5,7 @@ from db.usuarios import (
     cambiar_estado_usuario, contar_admins_activos, resetear_password_admin,
 )
 from utils.decorators import login_requerido, solo_admin
+from utils.errores import respuesta_error
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -64,7 +65,7 @@ def api_crear_usuario():
         else:
             return jsonify({"status": "error", "message": mensaje}), 400
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @auth_bp.route('/api/desactivar_usuario', methods=['POST'])
 @login_requerido
@@ -90,7 +91,7 @@ def api_desactivar_usuario():
         exito, mensaje = cambiar_estado_usuario(usuario_id, activo=False)
         return jsonify({"status": "success" if exito else "error", "message": mensaje})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @auth_bp.route('/api/reactivar_usuario', methods=['POST'])
 @login_requerido
@@ -106,7 +107,7 @@ def api_reactivar_usuario():
         exito, mensaje = cambiar_estado_usuario(usuario_id, activo=True)
         return jsonify({"status": "success" if exito else "error", "message": mensaje})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @auth_bp.route('/api/resetear_password', methods=['POST'])
 @login_requerido
@@ -127,4 +128,4 @@ def api_resetear_password():
             return jsonify({"status": "success"})
         return jsonify({"status": "error", "message": mensaje}), 400
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, jsonify, send_file
 
 from db.reportes import generar_excel_dia, obtener_datos_graficos
 from utils.decorators import login_requerido
+from utils.errores import respuesta_error
 
 reportes_bp = Blueprint('reportes', __name__)
 
@@ -23,7 +24,7 @@ def api_excel_dia(fecha):
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @reportes_bp.route('/api/datos_graficos')
 @login_requerido

@@ -5,6 +5,7 @@ import pytz
 from db.facturas import guardar_factura_db, obtener_facturas_db, actualizar_estado_factura_db
 from db.proveedores import obtener_proveedores_db, guardar_proveedor_db, eliminar_proveedor_db
 from utils.decorators import login_requerido
+from utils.errores import respuesta_error
 
 proveedores_bp = Blueprint('proveedores', __name__)
 
@@ -34,7 +35,7 @@ def api_guardar_factura():
         return jsonify({"status": "success"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @proveedores_bp.route('/api/obtener_facturas')
 @login_requerido
@@ -60,7 +61,7 @@ def api_actualizar_estado_factura():
         return jsonify({"status": "success"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @proveedores_bp.route('/api/obtener_proveedores')
 @login_requerido
@@ -81,7 +82,7 @@ def api_guardar_proveedor():
         guardar_proveedor_db(data)
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)
 
 @proveedores_bp.route('/api/eliminar_proveedor', methods=['POST'])
 @login_requerido
@@ -94,4 +95,4 @@ def api_eliminar_proveedor():
         eliminar_proveedor_db(proveedor_id)
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return respuesta_error(e)

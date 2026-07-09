@@ -251,3 +251,15 @@ def test_resetear_password_permite_login_con_la_nueva(client):
 
     resp = login(client, username='empleado2', password='nuevaclave123')
     assert resp.status_code == 302  # la nueva si funciona
+
+def test_error_inesperado_no_expone_detalle_tecnico_al_frontend(client):
+    login(client)
+    # cantidad no numerica revienta el int() dentro del try y cae al except generico
+    resp = client.post('/api/ajuste_stock', json={
+        'producto_id': 1, 'cantidad': 'no-es-un-numero',
+    })
+    data = resp.get_json()
+    assert resp.status_code == 500
+    assert data['status'] == 'error'
+    assert data['message'] == "Ocurrió un error inesperado. Intenta de nuevo."
+    assert 'invalid literal' not in data['message']  # el detalle tecnico no se filtra
