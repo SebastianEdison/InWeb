@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, jsonify, url_for, flash, session
 
-from db.usuarios import verificar_usuario, crear_usuario, obtener_usuarios
+from db.usuarios import (
+    verificar_usuario, crear_usuario, obtener_usuarios,
+    cambiar_estado_usuario, contar_admins_activos, resetear_password_admin,
+)
 from utils.decorators import login_requerido, solo_admin
 
 auth_bp = Blueprint('auth', __name__)
@@ -60,5 +63,68 @@ def api_crear_usuario():
             return jsonify({"status": "success"})
         else:
             return jsonify({"status": "error", "message": mensaje}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@auth_bp.route('/api/desactivar_usuario', methods=['POST'])
+@login_requerido
+@solo_admin
+def api_desactivar_usuario():
+    try:
+        data = request.get_json()
+        usuario_id = data.get('usuario_id')
+
+        if not usuario_id:
+            return jsonify({"status": "error", "message": "ID inválido"}), 400
+
+        if usuario_id == session['usuario_id']:
+            return jsonify({"status": "error", "message": "No puedes desactivar tu propia cuenta"}), 400
+
+        objetivo = next((u for u in obtener_usuarios() if u['id'] == usuario_id), None)
+        if not objetivo:
+            return jsonify({"status": "error", "message": "Usuario no encontrado"}), 404
+
+        if objetivo['rol'] == 'admin' and objetivo['activo'] and contar_admins_activos() <= 1:
+            return jsonify({"status": "error", "message": "No puedes desactivar al único administrador activo"}), 400
+
+        exito, mensaje = cambiar_estado_usuario(usuario_id, activo=False)
+        return jsonify({"status": "success" if exito else "error", "message": mensaje})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@auth_bp.route('/api/reactivar_usuario', methods=['POST'])
+@login_requerido
+@solo_admin
+def api_reactivar_usuario():
+    try:
+        data = request.get_json()
+        usuario_id = data.get('usuario_id')
+
+        if not usuario_id:
+            return jsonify({"status": "error", "message": "ID inválido"}), 400
+
+        exito, mensaje = cambiar_estado_usuario(usuario_id, activo=True)
+        return jsonify({"status": "success" if exito else "error", "message": mensaje})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@auth_bp.route('/api/resetear_password', methods=['POST'])
+@login_requerido
+@solo_admin
+def api_resetear_password():
+    try:
+        data           = request.get_json()
+        usuario_id     = data.get('usuario_id')
+        password_nueva = data.get('password_nueva', '').strip()
+
+        if not usuario_id or not password_nueva:
+            return jsonify({"status": "error", "message": "Datos inválidos"}), 400
+        if len(password_nueva) < 4:
+            return jsonify({"status": "error", "message": "La contraseña debe tener al menos 4 caracteres"}), 400
+
+        exito, mensaje = resetear_password_admin(usuario_id, password_nueva)
+        if exito:
+            return jsonify({"status": "success"})
+        return jsonify({"status": "error", "message": mensaje}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

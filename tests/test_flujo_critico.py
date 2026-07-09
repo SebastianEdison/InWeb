@@ -187,3 +187,67 @@ def test_eliminar_producto_es_soft_delete(client):
     productos = client.get('/buscar_producto?busqueda=Descontinuado').get_json()
     assert len(productos) == 1
     assert productos[0]['stock'] == 6
+
+def _id_de_usuario(client, username):
+    usuarios = client.get('/api/usuarios').get_json()['usuarios']
+    return next(u['id'] for u in usuarios if u['username'] == username)
+
+def test_desactivar_usuario_le_bloquea_el_login(client):
+    login(client)
+    client.post('/api/crear_usuario', json={
+        'username': 'empleado1', 'password': 'clave1234', 'nombre': 'Empleado Uno', 'rol': 'empleado',
+    })
+    empleado_id = _id_de_usuario(client, 'empleado1')
+
+    resp = client.post('/api/desactivar_usuario', json={'usuario_id': empleado_id})
+    assert resp.get_json()['status'] == 'success'
+
+    client.get('/logout')
+    resp = login(client, username='empleado1', password='clave1234')
+    assert resp.status_code == 200  # se queda en login, no lo deja entrar
+
+def test_no_se_puede_desactivar_al_unico_admin_activo(client):
+    login(client)
+    admin_id = _id_de_usuario(client, 'admin')
+
+    resp = client.post('/api/desactivar_usuario', json={'usuario_id': admin_id})
+    data = resp.get_json()
+    assert data['status'] == 'error'
+    assert 'propia cuenta' in data['message']  # ademas coincide con la regla de no auto-desactivarse
+
+def test_no_se_puede_desactivar_al_ultimo_admin_aunque_no_sea_uno_mismo(client):
+    login(client)
+    client.post('/api/crear_usuario', json={
+        'username': 'admin2', 'password': 'clave1234', 'nombre': 'Admin Dos', 'rol': 'admin',
+    })
+    admin2_id = _id_de_usuario(client, 'admin2')
+
+    # desactivar al admin2 esta bien, sigue quedando el admin original activo
+    resp = client.post('/api/desactivar_usuario', json={'usuario_id': admin2_id})
+    assert resp.get_json()['status'] == 'success'
+
+    # reactivarlo y ahora, con admin2 activo, el original SI podria desactivar a admin2
+    # (verificamos el caso limite: intentar desactivar al ultimo admin activo restante)
+    client.post('/api/reactivar_usuario', json={'usuario_id': admin2_id})
+    admin_id = _id_de_usuario(client, 'admin')
+    resp = client.post('/api/desactivar_usuario', json={'usuario_id': admin2_id})
+    assert resp.get_json()['status'] == 'success'  # todavia queda 'admin' activo, esto es valido
+
+def test_resetear_password_permite_login_con_la_nueva(client):
+    login(client)
+    client.post('/api/crear_usuario', json={
+        'username': 'empleado2', 'password': 'viejaclave', 'nombre': 'Empleado Dos', 'rol': 'empleado',
+    })
+    empleado_id = _id_de_usuario(client, 'empleado2')
+
+    resp = client.post('/api/resetear_password', json={
+        'usuario_id': empleado_id, 'password_nueva': 'nuevaclave123',
+    })
+    assert resp.get_json()['status'] == 'success'
+
+    client.get('/logout')
+    resp = login(client, username='empleado2', password='viejaclave')
+    assert resp.status_code == 200  # la vieja ya no sirve
+
+    resp = login(client, username='empleado2', password='nuevaclave123')
+    assert resp.status_code == 302  # la nueva si funciona

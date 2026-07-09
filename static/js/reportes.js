@@ -417,11 +417,14 @@ async function cargarConfig() {
         const usuarios     = dataUsuarios.usuarios || [];
 
         var listaUsuarios = usuarios.map(function(u) {
-            return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:white; border-radius:8px; margin-bottom:6px; border:1px solid #e2e8f0;">' +
+            return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:white; border-radius:8px; margin-bottom:6px; border:1px solid #e2e8f0;' + (u.activo ? '' : 'opacity:0.5;') + '">' +
                 '<span style="font-weight:600; color:#1e293b; font-size:0.9rem;"><i class="fas fa-user-circle" style="color:' + (u.rol === 'admin' ? '#2563eb' : '#94a3b8') + ';"></i> ' + u.nombre + '</span>' +
                 '<div style="display:flex; align-items:center; gap:8px;">' +
                 '<span style="font-size:0.75rem; color:#64748b;">@' + u.username + '</span>' +
                 '<span style="background:' + (u.rol === 'admin' ? '#eff6ff' : '#f1f5f9') + '; color:' + (u.rol === 'admin' ? '#2563eb' : '#64748b') + '; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:700;">' + u.rol + '</span>' +
+                (u.activo ? '' : '<span style="background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:700;">Inactivo</span>') +
+                '<button onclick="resetearPasswordUsuario(' + u.id + ', \'' + u.nombre.replace(/'/g, "") + '\')" title="Resetear contrasena" style="background:none; border:none; cursor:pointer; color:#64748b; padding:4px;"><i class="fas fa-key"></i></button>' +
+                '<button onclick="toggleActivoUsuario(' + u.id + ', ' + !u.activo + ')" title="' + (u.activo ? 'Desactivar' : 'Reactivar') + '" style="background:none; border:none; cursor:pointer; color:' + (u.activo ? '#dc2626' : '#16a34a') + '; padding:4px;"><i class="fas ' + (u.activo ? 'fa-user-slash' : 'fa-user-check') + '"></i></button>' +
                 '</div></div>';
         }).join('');
 
@@ -523,6 +526,53 @@ async function crearUsuario() {
         if (result.status === 'success') {
             mostrarAlerta('✅ Usuario "' + username + '" creado');
             cargarConfig();
+        } else {
+            mostrarAlerta('❌ ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('❌ Error de conexion', 'error');
+    }
+}
+
+async function toggleActivoUsuario(usuarioId, activar) {
+    const accion = activar ? 'reactivar' : 'desactivar';
+    if (!confirm('¿Seguro que quieres ' + accion + ' este usuario?')) return;
+
+    try {
+        const resp = await fetch(activar ? '/api/reactivar_usuario' : '/api/desactivar_usuario', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            mostrarAlerta('✅ Usuario ' + accion + 'do');
+            cargarConfig();
+        } else {
+            mostrarAlerta('❌ ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('❌ Error de conexion', 'error');
+    }
+}
+
+async function resetearPasswordUsuario(usuarioId, nombre) {
+    const nueva = prompt('Nueva contrasena para ' + nombre + ' (minimo 4 caracteres):');
+    if (!nueva) return;
+    if (nueva.length < 4) {
+        mostrarAlerta('❌ La contraseña debe tener al menos 4 caracteres', 'error');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/resetear_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId, password_nueva: nueva })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            mostrarAlerta('✅ Contraseña reseteada');
         } else {
             mostrarAlerta('❌ ' + result.message, 'error');
         }

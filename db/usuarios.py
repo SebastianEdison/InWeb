@@ -64,6 +64,36 @@ def obtener_usuarios():
     conn.close()
     return resultados
 
+def contar_admins_activos():
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM usuarios WHERE rol = 'admin' AND activo = 1")
+    total = cursor.fetchone()[0]
+    conn.close()
+    return total
+
+def cambiar_estado_usuario(usuario_id, activo):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE usuarios SET activo = ? WHERE id = ?", (1 if activo else 0, usuario_id))
+    conn.commit()
+    conn.close()
+    return True, "Usuario " + ("reactivado" if activo else "desactivado")
+
+def resetear_password_admin(usuario_id, password_nueva):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM usuarios WHERE id = ?", (usuario_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return False, "Usuario no encontrado"
+
+    hash_nueva = generate_password_hash(password_nueva)
+    cursor.execute("UPDATE usuarios SET password = ? WHERE id = ?", (hash_nueva, usuario_id))
+    conn.commit()
+    conn.close()
+    return True, "Contraseña reseteada"
+
 def cambiar_password_db(usuario_id, password_actual, password_nueva):
     conn = conectar()
     cursor = conn.cursor()
