@@ -55,7 +55,25 @@ def create_app():
     return app
 
 
-# Feature 8: backup automático diario
+def limpiar_reportes_viejos(dias_a_conservar=180):
+    """Los Excel de cierre no se podaban nunca (a diferencia de los backups): con años de uso
+    se acumulan sin limite. Se conservan ~6 meses, suficiente para cualquier revision contable."""
+    carpeta = os.path.join(_BASE_DIR, 'reportes')
+    if not os.path.isdir(carpeta):
+        return
+    limite = datetime.now() - timedelta(days=dias_a_conservar)
+    for nombre in os.listdir(carpeta):
+        if not (nombre.startswith('cierre_') and nombre.endswith('.xlsx')):
+            continue
+        try:
+            fecha_archivo = datetime.strptime(nombre[len('cierre_'):-len('.xlsx')], '%Y-%m-%d_%H-%M')
+        except ValueError:
+            continue
+        if fecha_archivo < limite:
+            os.remove(os.path.join(carpeta, nombre))
+
+
+# Feature 8: backup automático diario + poda de backups y reportes viejos
 def hacer_backup_automatico():
     backup_dir = os.path.join(_BASE_DIR, 'backups')
     os.makedirs(backup_dir, exist_ok=True)
@@ -70,6 +88,9 @@ def hacer_backup_automatico():
     archivos = sorted([f for f in os.listdir(backup_dir) if f.endswith('.db')])
     while len(archivos) > 7:
         os.remove(os.path.join(backup_dir, archivos.pop(0)))
+
+    limpiar_reportes_viejos()
+
     # próximo backup en 24 horas
     timer = threading.Timer(86400, hacer_backup_automatico)
     timer.daemon = True
