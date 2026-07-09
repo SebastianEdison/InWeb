@@ -1,6 +1,9 @@
 # Entorno virtual (no es código, se puede recrear)
 venv/
 
+# Clave secreta de sesion, generada automaticamente en el primer arranque
+secret.key
+
 # Base de datos (datos privados y archivos pesados)
 *.db
 

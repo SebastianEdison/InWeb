@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_file
-import sqlite3, os, sys, shutil, threading, webbrowser, time
+import sqlite3, os, sys, shutil, threading, webbrowser, time, secrets
 from functools import wraps
 from datetime import datetime, timedelta
 import pytz
@@ -11,6 +11,19 @@ if getattr(sys, 'frozen', False):
 else:
     _BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
     _BUNDLE_DIR = _BASE_DIR
+
+def _cargar_o_crear_secret_key():
+    """Genera una secret_key la primera vez y la reutiliza despues, guardada junto a la BD."""
+    key_path = os.path.join(_BASE_DIR, 'secret.key')
+    if os.path.exists(key_path):
+        with open(key_path, 'r') as f:
+            key = f.read().strip()
+            if key:
+                return key
+    key = secrets.token_hex(32)
+    with open(key_path, 'w') as f:
+        f.write(key)
+    return key
 
 from databases import (
     obtener_productos, eliminar_producto, actualizar_producto,
@@ -28,7 +41,7 @@ app = Flask(
     template_folder=os.path.join(_BUNDLE_DIR, 'templates'),
     static_folder=os.path.join(_BUNDLE_DIR, 'static')
 )
-app.secret_key = 'clave_secreta'
+app.secret_key = _cargar_o_crear_secret_key()
 app.permanent_session_lifetime = timedelta(hours=12)
 tz_chile = pytz.timezone('America/Santiago')
 fecha_local = datetime.now(tz_chile).strftime('%d-%m-%Y %H:%M')
