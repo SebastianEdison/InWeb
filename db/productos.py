@@ -8,7 +8,7 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
     cursor = conexion.cursor()
 
     try:
-        cursor.execute("SELECT id, stock FROM productos WHERE codigo_barra = ?", (codigo,))
+        cursor.execute("SELECT id, stock, fecha_vencimiento FROM productos WHERE codigo_barra = ?", (codigo,))
         existente = cursor.fetchone()
 
         if existente:
@@ -16,11 +16,20 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
             stock_actual = existente['stock']
             nuevo_total = stock_actual + int(stock)
 
+            # Al reponer stock puede llegar un lote con otra fecha de vencimiento. Como solo
+            # guardamos una fecha por producto (no por lote), nos quedamos con la mas proxima
+            # de las dos: es la que hay que vender/alertar primero, sin importar en que lote este.
+            fecha_anterior = existente['fecha_vencimiento']
+            if fecha_anterior and fecha_vencimiento:
+                fecha_final = min(fecha_anterior, fecha_vencimiento)
+            else:
+                fecha_final = fecha_vencimiento or fecha_anterior
+
             cursor.execute("""
                 UPDATE productos
                 SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?
                 WHERE id=?
-            """, (nombre, precio, costo, nuevo_total, unidad, fecha_vencimiento, stock_minimo, categoria, id_producto))
+            """, (nombre, precio, costo, nuevo_total, unidad, fecha_final, stock_minimo, categoria, id_producto))
             print(f"Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
 
         else:

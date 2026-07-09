@@ -140,3 +140,21 @@ def test_venta_anulada_no_cuenta_en_totales_de_reportes(client):
     graficos = client.get('/api/datos_graficos').get_json()
     assert graficos['metodos'] == {}
     assert graficos['productos'] == []
+
+def test_reponer_stock_conserva_la_fecha_de_vencimiento_mas_proxima(client):
+    login(client)
+
+    # primer lote: vence antes
+    client.post('/agregar', json={
+        'codigo': '555', 'nombre': 'Yogurt', 'precio_venta': 800,
+        'precio_compra': 400, 'stock': 5, 'fecha_vencimiento': '2026-08-01',
+    })
+    # segundo lote (repone stock del mismo codigo): vence despues
+    client.post('/agregar', json={
+        'codigo': '555', 'nombre': 'Yogurt', 'precio_venta': 800,
+        'precio_compra': 400, 'stock': 5, 'fecha_vencimiento': '2026-09-15',
+    })
+
+    productos = client.get('/buscar_producto?busqueda=Yogurt').get_json()
+    assert productos[0]['stock'] == 10
+    assert productos[0]['fecha_vencimiento'] == '2026-08-01'  # la mas proxima, no la ultima cargada
