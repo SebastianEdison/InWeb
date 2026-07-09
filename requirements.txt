@@ -5,3 +5,6 @@ openpyxl==3.1.5
 
 # Solo necesario para generar el .exe (build.bat)
 pyinstaller
+
+# Solo necesario para correr los tests (pytest tests/)
+pytest
