@@ -522,13 +522,6 @@ def api_productos_muertos():
 
 
 # ── CONFIGURACIÓN ──
-@app.route('/configuracion')
-@login_requerido
-@solo_admin
-def configuracion():
-    return render_template('configuracion.html')
-
-
 @app.route('/api/obtener_config')
 @login_requerido
 def api_obtener_config():

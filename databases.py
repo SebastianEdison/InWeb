@@ -104,7 +104,7 @@ def crear_tablas():
             INSERT INTO usuarios (username, password, nombre, rol)
                 VALUES ('admin', ?, 'Administrador', 'admin')
             """, (password_hash,))
-            print("✅ Usuario admin creado: admin / admin123")
+            print("Usuario admin creado: admin / admin123")
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS fiados (
@@ -219,20 +219,20 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
                 SET nombre=?, precio_venta=?, costo=?, stock=?, unidad=?, fecha_vencimiento=?, stock_minimo=?, categoria=?
                 WHERE id=?
             """, (nombre, precio, costo, nuevo_total, unidad, fecha_vencimiento, stock_minimo, categoria, id_producto))
-            print(f"✅ Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
+            print(f"Producto '{nombre}' actualizado. Nuevo stock: {nuevo_total}")
 
         else:
             cursor.execute("""
                 INSERT INTO productos (codigo_barra, nombre, precio_venta, costo, stock, unidad, fecha_vencimiento, stock_minimo, categoria)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (codigo, nombre, precio, costo, stock, unidad, fecha_vencimiento, stock_minimo, categoria))
-            print(f"✨ Nuevo producto '{nombre}' registrado")
+            print(f"Nuevo producto '{nombre}' registrado")
 
         conexion.commit()
 
     except sqlite3.Error as e:
         conexion.rollback()
-        print(f"❌ Error al procesar producto: {e}")
+        print(f"Error al procesar producto: {e}")
     finally:
         conexion.close()
             
@@ -391,13 +391,13 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar=False, descuento=0):
 
         # 5. COMMIT FINAL (Solo se guarda si nada falló arriba)
         conexion.commit()
-        print(f"✅ Venta #{venta_id} registrada con éxito (${total_venta})")
+        print(f"Venta #{venta_id} registrada con exito (${total_venta})")
         return True, venta_id
 
     except Exception as e:
         if conexion:
             conexion.rollback() # Si hay error de sistema, deshace todo
-        print(f"❌ Error al registrar la venta: {e}")
+        print(f"Error al registrar la venta: {e}")
         return False, str(e)
         
     finally: 
@@ -765,7 +765,7 @@ def generar_reporte_excel(datos_cierre):
     ws.column_dimensions['D'].width = 15
 
     wb.save(ruta)
-    print(f"✅ Reporte guardado en: {ruta}")
+    print(f"Reporte guardado en: {ruta}")
 
 def generar_excel_dia(fecha):
     import openpyxl
