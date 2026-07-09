@@ -13,3 +13,10 @@ __pycache__/
 
 # Reportes de prueba (CSV)
 *.csv
+
+# Reportes de cierre generados (datos reales del negocio, no codigo)
+reportes/*.xlsx
+
+# Artefactos de PyInstaller (se regeneran con build.bat)
+build/
+dist/

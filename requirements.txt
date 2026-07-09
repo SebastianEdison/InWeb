@@ -1,0 +1,7 @@
+# Dependencias para correr la app en desarrollo (python app.py)
+Flask==3.1.3
+pytz==2026.2
+openpyxl==3.1.5
+
+# Solo necesario para generar el .exe (build.bat)
+pyinstaller
