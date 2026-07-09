@@ -4,6 +4,7 @@ import pytz
 import sys
 import os
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 tz_chile = pytz.timezone('America/Santiago')
 fecha_chile = datetime.now(tz_chile).strftime('%Y-%m-%d %H:%M:%S')
@@ -98,8 +99,7 @@ def crear_tablas():
     # Usuario admin por defecto (solo si no existe)
     cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
     if not cursor.fetchone():
-            import hashlib
-            password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
+            password_hash = generate_password_hash('admin123')
             cursor.execute("""
             INSERT INTO usuarios (username, password, nombre, rol)
                 VALUES ('admin', ?, 'Administrador', 'admin')
@@ -529,28 +529,47 @@ def saldar_fiado_db(fiado_id, monto_pago):
     conn.close()
     return True, estado
 
+def _es_hash_antiguo(hash_guardado):
+    """Los hashes viejos son sha256 sin sal: 64 caracteres hex, sin ':' (formato de werkzeug)."""
+    return hash_guardado is not None and ':' not in hash_guardado
+
 def verificar_usuario(username, password):
-    import hashlib
     conn = conectar()
     cursor = conn.cursor()
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
     cursor.execute("""
-        SELECT id, username, nombre, rol 
-        FROM usuarios 
-        WHERE username = ? AND password = ? AND activo = 1
-    """, (username, password_hash))
+        SELECT id, username, nombre, rol, password
+        FROM usuarios
+        WHERE username = ? AND activo = 1
+    """, (username,))
     usuario = cursor.fetchone()
+
+    if not usuario:
+        conn.close()
+        return None
+
+    hash_guardado = usuario['password']
+
+    if _es_hash_antiguo(hash_guardado):
+        if hashlib.sha256(password.encode()).hexdigest() != hash_guardado:
+            conn.close()
+            return None
+        # Login correcto con hash antiguo: se migra a uno seguro con sal, sin pedirle nada al usuario
+        nuevo_hash = generate_password_hash(password)
+        cursor.execute("UPDATE usuarios SET password = ? WHERE id = ?", (nuevo_hash, usuario['id']))
+        conn.commit()
+    else:
+        if not check_password_hash(hash_guardado, password):
+            conn.close()
+            return None
+
     conn.close()
-    if usuario:
-        return dict(usuario)
-    return None
+    return {'id': usuario['id'], 'username': usuario['username'], 'nombre': usuario['nombre'], 'rol': usuario['rol']}
 
 def crear_usuario(username, password, nombre, rol='empleado'):
-    import hashlib
     conn = conectar()
     cursor = conn.cursor()
     try:
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        password_hash = generate_password_hash(password)
         cursor.execute("""
             INSERT INTO usuarios (username, password, nombre, rol)
             VALUES (?, ?, ?, ?)
@@ -641,26 +660,31 @@ def guardar_config_db(datos):
     conn.close()
 
 def cambiar_password_db(usuario_id, password_actual, password_nueva):
-    import hashlib
     conn = conectar()
     cursor = conn.cursor()
-    
-    # Verificar contraseña actual
-    hash_actual = hashlib.sha256(password_actual.encode()).hexdigest()
-    cursor.execute("SELECT id FROM usuarios WHERE id = ? AND password = ?", 
-                   (usuario_id, hash_actual))
-    
-    if not cursor.fetchone():
+
+    cursor.execute("SELECT password FROM usuarios WHERE id = ?", (usuario_id,))
+    fila = cursor.fetchone()
+    if not fila:
+        conn.close()
+        return False, "Usuario no encontrado"
+
+    hash_guardado = fila['password']
+    if _es_hash_antiguo(hash_guardado):
+        valido = hashlib.sha256(password_actual.encode()).hexdigest() == hash_guardado
+    else:
+        valido = check_password_hash(hash_guardado, password_actual)
+
+    if not valido:
         conn.close()
         return False, "Contraseña actual incorrecta"
-    
-    # Actualizar contraseña
-    hash_nueva = hashlib.sha256(password_nueva.encode()).hexdigest()
-    cursor.execute("UPDATE usuarios SET password = ? WHERE id = ?", 
+
+    hash_nueva = generate_password_hash(password_nueva)
+    cursor.execute("UPDATE usuarios SET password = ? WHERE id = ?",
                    (hash_nueva, usuario_id))
     conn.commit()
     conn.close()
-    return True, "Contraseña actualizada"    
+    return True, "Contraseña actualizada"
 
 def generar_reporte_excel(datos_cierre):
     import openpyxl
