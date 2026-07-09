@@ -1,5 +1,6 @@
 from flask import Flask
-import os, sys, shutil, threading, webbrowser, time, secrets
+import os, sys, shutil, threading, webbrowser, time, secrets, logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
 import pytz
 
@@ -80,9 +81,48 @@ def _abrir_navegador():
     webbrowser.open('http://127.0.0.1:5000')
 
 
+def _configurar_logging_a_archivo():
+    """El .exe corre sin consola (console=False): sin esto, cualquier print() o error
+    que ocurra en el equipo de produccion no queda registrado en ninguna parte."""
+    log_dir = os.path.join(_BASE_DIR, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+
+    handler = RotatingFileHandler(
+        os.path.join(log_dir, 'app.log'), maxBytes=1_000_000, backupCount=3, encoding='utf-8'
+    )
+    handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+
+    logger = logging.getLogger('elhistorico')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+    class _EscritorDeLog:
+        """Junta los write() parciales y solo registra una linea por cada '\\n' completo."""
+        def __init__(self):
+            self._buffer = ''
+
+        def write(self, mensaje):
+            self._buffer += mensaje
+            while '\n' in self._buffer:
+                linea, self._buffer = self._buffer.split('\n', 1)
+                linea = linea.strip()
+                if linea:
+                    logger.info(linea)
+
+        def flush(self):
+            if self._buffer.strip():
+                logger.info(self._buffer.strip())
+                self._buffer = ''
+
+    sys.stdout = _EscritorDeLog()
+    sys.stderr = _EscritorDeLog()
+
+
 app = create_app()
 
 if __name__ == '__main__':
+    if getattr(sys, 'frozen', False):
+        _configurar_logging_a_archivo()
     crear_tablas()
     hacer_backup_automatico()
     t = threading.Thread(target=_abrir_navegador, daemon=True)

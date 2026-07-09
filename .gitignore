@@ -20,3 +20,9 @@ reportes/*.xlsx
 # Artefactos de PyInstaller (se regeneran con build.bat)
 build/
 dist/
+
+# Logs de la app compilada
+logs/
+
+# Cache de pytest
+.pytest_cache/
