@@ -8,18 +8,8 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar=False, descuento=0):
     try:
         conexion = conectar()
         cursor = conexion.cursor()
-        if not forzar:
-            for item in carrito:
-                cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (item['id'],))
-                producto = cursor.fetchone()
 
-                if not producto:
-                    return False, f"El producto con ID {item['id']} no existe."
-
-                if producto['stock'] < item['cantidad']:
-                    return False, f"Stock insuficiente para {producto['nombre']}. Solo quedan {producto['stock']}."
-
-        # 1. VALIDACIÓN: Revisar si hay stock para TODO el carrito antes de empezar
+        # 1. VALIDACIÓN: el producto debe existir siempre; el stock solo se exige si no se fuerza la venta
         for item in carrito:
             cursor.execute("SELECT stock, nombre FROM productos WHERE id = ?", (item['id'],))
             producto = cursor.fetchone()
@@ -27,8 +17,7 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar=False, descuento=0):
             if not producto:
                 return False, f"El producto con ID {item['id']} no existe."
 
-            # Si lo que quiere vender es mayor a lo que hay, cancelamos
-            if producto['stock'] < item['cantidad']:
+            if not forzar and producto['stock'] < item['cantidad']:
                 return False, f"Stock insuficiente para {producto['nombre']}. Solo quedan {producto['stock']}."
 
         # 2. CALCULAR TOTAL
@@ -51,8 +40,9 @@ def registrar_venta(carrito, metodo_pago="Efectivo", forzar=False, descuento=0):
                 VALUES (?, ?, ?, ?, ?)
             """, (venta_id, item['id'], item['cantidad'], item['precio'], subtotal))
 
-            # DESCUENTO DE STOCK (Aquí es donde se hacía el negativo antes)
-            cursor.execute("UPDATE productos SET stock = stock - ? WHERE id = ?",
+            # DESCUENTO DE STOCK. No baja de 0 (hay un CHECK(stock >= 0) en la tabla):
+            # con venta forzada puede venderse mas de lo que hay, pero el stock queda en 0, no negativo.
+            cursor.execute("UPDATE productos SET stock = MAX(stock - ?, 0) WHERE id = ?",
                            (item['cantidad'], item['id']))
 
             # Registro en Kardex (Movimientos)
@@ -99,14 +89,17 @@ def obtener_ventas_por_dia(fecha=None):
     conn = conectar()
     cursor = conn.cursor()
 
+    # Los totales no cuentan ventas anuladas (no es plata que realmente entro), pero el dia
+    # sigue apareciendo aunque todas sus ventas se hayan anulado, y la lista de mas abajo
+    # las incluye igual para que se vean tachadas en pantalla.
     sql_dias = """
         SELECT
             DATE(fecha) as dia,
-            COUNT(*) as total_ventas,
-            SUM(total) as total_dia,
-            SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
-            SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
-            SUM(CASE WHEN metodo_pago = 'otros' THEN total ELSE 0 END) as otros
+            SUM(CASE WHEN anulada = 0 THEN 1 ELSE 0 END) as total_ventas,
+            SUM(CASE WHEN anulada = 0 THEN total ELSE 0 END) as total_dia,
+            SUM(CASE WHEN anulada = 0 AND metodo_pago = 'efectivo' THEN total ELSE 0 END) as efectivo,
+            SUM(CASE WHEN anulada = 0 AND metodo_pago = 'tarjeta' THEN total ELSE 0 END) as tarjeta,
+            SUM(CASE WHEN anulada = 0 AND metodo_pago = 'otros' THEN total ELSE 0 END) as otros
         FROM ventas
     """
     if fecha:

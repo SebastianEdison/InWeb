@@ -56,6 +56,26 @@ def test_venta_rechaza_stock_insuficiente(client):
     data = resp.get_json()
     assert data['status'] == 'error'
 
+def test_venta_forzada_se_permite_con_stock_insuficiente(client):
+    login(client)
+    client.post('/agregar', json={
+        'codigo': '444', 'nombre': 'Forzable', 'precio_venta': 500,
+        'precio_compra': 200, 'stock': 1,
+    })
+    producto_id = client.get('/buscar_producto?busqueda=Forzable').get_json()[0]['id']
+
+    resp = client.post('/api/registrar_venta', json={
+        'carrito': [{'id': producto_id, 'cantidad': 5, 'precio': 500}],
+        'metodo_pago': 'Efectivo',
+        'forzar': True,
+    })
+    data = resp.get_json()
+    assert data['status'] == 'success'
+
+    # el stock no queda negativo, se clampea a 0
+    productos = client.get('/buscar_producto?busqueda=Forzable').get_json()
+    assert productos[0]['stock'] == 0
+
 def test_cierre_de_caja_queda_en_el_historial(client):
     login(client)
 
@@ -81,3 +101,42 @@ def test_fiado_se_puede_saldar(client):
         'fiado_id': fiado['id'], 'monto': 3000,
     })
     assert resp.get_json()['estado'] == 'pagado'
+
+def test_venta_anulada_no_cuenta_en_totales_de_reportes(client):
+    login(client)
+    client.post('/agregar', json={
+        'codigo': '333', 'nombre': 'Producto anulable', 'precio_venta': 1000,
+        'precio_compra': 500, 'stock': 10,
+    })
+    producto_id = client.get('/buscar_producto?busqueda=Producto+anulable').get_json()[0]['id']
+
+    resp = client.post('/api/registrar_venta', json={
+        'carrito': [{'id': producto_id, 'cantidad': 3, 'precio': 1000}],
+        'metodo_pago': 'efectivo',
+    })
+    venta_id = resp.get_json()['venta_id']
+
+    # antes de anular, el dia debe reflejar la venta
+    dias = client.get('/api/ventas_por_dia').get_json()['dias']
+    assert dias[0]['total_ventas'] == 1
+    assert dias[0]['total_dia'] == 3000
+    assert len(dias[0]['ventas']) == 1  # la venta aparece en la lista
+
+    resp = client.post('/api/anular_venta', json={'venta_id': venta_id})
+    assert resp.get_json()['status'] == 'success'
+
+    # stock restaurado
+    productos = client.get('/buscar_producto?busqueda=Producto+anulable').get_json()
+    assert productos[0]['stock'] == 10
+
+    # el total del dia ya no cuenta la venta anulada, pero sigue listada (para verla tachada)
+    dias = client.get('/api/ventas_por_dia').get_json()['dias']
+    assert dias[0]['total_ventas'] == 0
+    assert dias[0]['total_dia'] == 0
+    assert len(dias[0]['ventas']) == 1
+    assert dias[0]['ventas'][0]['anulada'] == 1
+
+    # tampoco debe aparecer en los graficos
+    graficos = client.get('/api/datos_graficos').get_json()
+    assert graficos['metodos'] == {}
+    assert graficos['productos'] == []

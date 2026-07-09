@@ -81,7 +81,7 @@ def generar_reporte_excel(datos_cierre):
     cursor.execute("""
         SELECT id, fecha, metodo_pago, total
         FROM ventas
-        WHERE DATE(fecha) = ?
+        WHERE DATE(fecha) = ? AND anulada = 0
         ORDER BY fecha DESC
     """, (hoy,))
     ventas = cursor.fetchall()
@@ -141,7 +141,7 @@ def generar_excel_dia(fecha):
         FROM ventas v
         JOIN detalle_venta dv ON dv.venta_id = v.id
         JOIN productos p ON p.id = dv.producto_id
-        WHERE DATE(v.fecha) = ?
+        WHERE DATE(v.fecha) = ? AND v.anulada = 0
         ORDER BY v.fecha DESC
     """, (fecha,))
     filas = cursor.fetchall()
@@ -150,7 +150,7 @@ def generar_excel_dia(fecha):
     cursor.execute("""
         SELECT metodo_pago, SUM(total) as total
         FROM ventas
-        WHERE DATE(fecha) = ?
+        WHERE DATE(fecha) = ? AND anulada = 0
         GROUP BY metodo_pago
     """, (fecha,))
     totales = cursor.fetchall()
@@ -204,20 +204,22 @@ def obtener_datos_graficos():
     conn = conectar()
     cursor = conn.cursor()
 
-    # 1. Efectivo vs Tarjeta vs Otros (últimos 30 días)
+    # 1. Efectivo vs Tarjeta vs Otros (últimos 30 días) — sin ventas anuladas
     cursor.execute("""
         SELECT metodo_pago, SUM(total) as total
         FROM ventas
-        WHERE fecha >= datetime('now', '-30 days')
+        WHERE fecha >= datetime('now', '-30 days') AND anulada = 0
         GROUP BY metodo_pago
     """)
     metodos = {row['metodo_pago']: row['total'] for row in cursor.fetchall()}
 
-    # 2. Productos más vendidos (top 8)
+    # 2. Productos más vendidos (top 8) — sin ventas anuladas
     cursor.execute("""
         SELECT p.nombre, SUM(dv.cantidad) as total_vendido
         FROM detalle_venta dv
         JOIN productos p ON p.id = dv.producto_id
+        JOIN ventas v ON v.id = dv.venta_id
+        WHERE v.anulada = 0
         GROUP BY p.id
         ORDER BY total_vendido DESC
         LIMIT 8
@@ -225,13 +227,13 @@ def obtener_datos_graficos():
     productos = [{'nombre': r['nombre'], 'cantidad': r['total_vendido']}
                  for r in cursor.fetchall()]
 
-    # 3. Evolución por semana (últimas 8 semanas)
+    # 3. Evolución por semana (últimas 8 semanas) — sin ventas anuladas
     cursor.execute("""
         SELECT
             strftime('%Y-W%W', fecha) as semana,
             SUM(total) as total
         FROM ventas
-        WHERE fecha >= datetime('now', '-56 days')
+        WHERE fecha >= datetime('now', '-56 days') AND anulada = 0
         GROUP BY semana
         ORDER BY semana ASC
     """)
