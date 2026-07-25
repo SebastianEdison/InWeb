@@ -236,6 +236,57 @@ def obtener_historial_stock_db(limite=100):
     conn.close()
     return resultados
 
+def es_stock_bajo(producto):
+    stock = producto['stock']
+    if stock <= 0:
+        return False
+    if producto['stock_minimo'] and producto['stock_minimo'] > 0:
+        return stock <= producto['stock_minimo']
+    return stock <= 3
+
+def contar_alertas():
+    """Para mostrar un aviso chico en Ventas sin tener que ir a Inventario a mirar."""
+    productos = obtener_productos()
+    stock_bajo = sum(1 for p in productos if es_stock_bajo(p))
+    por_vencer = len(obtener_productos_por_vencer(7))
+    return {'stock_bajo': stock_bajo, 'por_vencer': por_vencer}
+
+def marcar_favorito(producto_id, favorito):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE productos SET favorito = ? WHERE id = ?", (1 if favorito else 0, producto_id))
+    conn.commit()
+    conn.close()
+
+def obtener_accesos_rapidos(limite=8):
+    """Favoritos marcados a mano primero; el resto del espacio se rellena con los mas vendidos."""
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM productos WHERE activo = 1 AND favorito = 1 ORDER BY nombre")
+    favoritos = cursor.fetchall()
+
+    ids_favoritos = [p['id'] for p in favoritos]
+    faltan = limite - len(favoritos)
+
+    top_vendidos = []
+    if faltan > 0:
+        excluir_sql = f"AND p.id NOT IN ({','.join('?' * len(ids_favoritos))})" if ids_favoritos else ""
+        cursor.execute(f"""
+            SELECT p.*, SUM(dv.cantidad) as total_vendido
+            FROM productos p
+            JOIN detalle_venta dv ON dv.producto_id = p.id
+            JOIN ventas v ON v.id = dv.venta_id
+            WHERE p.activo = 1 AND v.anulada = 0 {excluir_sql}
+            GROUP BY p.id
+            ORDER BY total_vendido DESC
+            LIMIT ?
+        """, (*ids_favoritos, faltan))
+        top_vendidos = cursor.fetchall()
+
+    conn.close()
+    return list(favoritos) + list(top_vendidos)
+
 def ajuste_manual_stock_db(producto_id, cantidad, motivo='Ajuste manual'):
     conn = conectar()
     cursor = conn.cursor()

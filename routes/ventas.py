@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 
 from db.ventas import registrar_venta, anular_venta_db, obtener_ventas_por_dia
+from db.productos import obtener_accesos_rapidos, contar_alertas
 from utils.decorators import login_requerido
 from utils.errores import respuesta_error
 
@@ -58,3 +59,33 @@ def api_ventas_por_dia():
     except Exception as e:
         print(f"Error en ventas_por_dia: {e}")
         return jsonify({'dias': [], 'error': str(e)}), 500
+
+@ventas_bp.route('/api/accesos_rapidos')
+@login_requerido
+def api_accesos_rapidos():
+    try:
+        productos = obtener_accesos_rapidos()
+        lista = [{
+            "id": p['id'],
+            "nombre": p['nombre'],
+            "precio": p['precio_venta'],
+            "unidad": p['unidad'],
+            "codigo_barra": p['codigo_barra'],
+            "stock": p['stock'],
+            "fecha_vencimiento": p['fecha_vencimiento'] if p['fecha_vencimiento'] else None,
+            "categoria": p['categoria'] if p['categoria'] else 'General',
+            "favorito": bool(p['favorito']),
+        } for p in productos]
+        return jsonify(lista)
+    except Exception as e:
+        print(f"Error en accesos_rapidos: {e}")
+        return jsonify([])
+
+@ventas_bp.route('/api/alertas_resumen')
+@login_requerido
+def api_alertas_resumen():
+    try:
+        return jsonify(contar_alertas())
+    except Exception as e:
+        print(f"Error en alertas_resumen: {e}")
+        return jsonify({'stock_bajo': 0, 'por_vencer': 0})

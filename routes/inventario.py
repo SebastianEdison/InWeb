@@ -4,20 +4,13 @@ from db.productos import (
     obtener_productos, obtener_producto_por_id, agregar_producto,
     actualizar_producto, eliminar_producto, obtener_productos_muertos_db,
     obtener_productos_por_vencer, obtener_historial_stock_db, ajuste_manual_stock_db,
+    es_stock_bajo, marcar_favorito,
 )
 from utils.decorators import login_requerido
 from utils.errores import respuesta_error
 
 inventario_bp = Blueprint('inventario', __name__)
 
-
-def _es_stock_bajo(p):
-    stock = p['stock']
-    if stock <= 0:
-        return False
-    if p['stock_minimo'] and p['stock_minimo'] > 0:
-        return stock <= p['stock_minimo']
-    return stock <= 3
 
 @inventario_bp.route('/')
 @login_requerido
@@ -33,10 +26,10 @@ def index():
         productos_db = [p for p in productos_db if p['categoria'] == categoria_filter]
 
     if solo_bajo_stock:
-        productos_db = [p for p in productos_db if _es_stock_bajo(p)]
+        productos_db = [p for p in productos_db if es_stock_bajo(p)]
 
     todos = obtener_productos(None)
-    alertas_count = sum(1 for p in todos if _es_stock_bajo(p))
+    alertas_count = sum(1 for p in todos if es_stock_bajo(p))
 
     # lista de categorías distintas para mostrar filtros
     categorias_set = sorted({p['categoria'] for p in todos if p['categoria']})
@@ -121,6 +114,22 @@ def buscar_producto():
 def eliminar(id):
     eliminar_producto(id)
     return redirect('/')
+
+@inventario_bp.route('/api/toggle_favorito', methods=['POST'])
+@login_requerido
+def api_toggle_favorito():
+    try:
+        data = request.get_json()
+        producto_id = data.get('producto_id')
+        favorito    = bool(data.get('favorito'))
+
+        if not producto_id:
+            return jsonify({"status": "error", "message": "ID inválido"}), 400
+
+        marcar_favorito(producto_id, favorito)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return respuesta_error(e)
 
 @inventario_bp.route('/api/productos_por_vencer')
 @login_requerido

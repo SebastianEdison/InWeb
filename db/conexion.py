@@ -195,5 +195,11 @@ def crear_tablas():
         )
     ''')
 
+    # Feature 9: accesos rapidos en Ventas (favoritos marcados a mano)
+    try:
+        cursor.execute("ALTER TABLE productos ADD COLUMN favorito INTEGER DEFAULT 0")
+    except:
+        pass
+
     conexion.commit()
     conexion.close()

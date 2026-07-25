@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/obtener_config').then(r => r.json()).then(d => { _configNegocio = d; }).catch(() => {});
 
     actualizarInterfazVentas();
+    cargarAlertasVentas();
+    cargarAccesosRapidos();
+    cargarVentasHoy();
 
     const carritoGuardado = JSON.parse(localStorage.getItem('carrito_actual') || "[]");
     if (carritoGuardado.length > 0) {
@@ -573,6 +576,9 @@ async function procesarVentaFinal() {
             actualizarTotalesGenerales();
             cerrarModal();
             mostrarBoleta(result.venta_id, carritoParaBoleta, totalVenta, metodo);
+            cargarVentasHoy();
+            cargarAccesosRapidos();
+            cargarAlertasVentas();
         } else {
             cerrarModal();
             mostrarAlertaVenta(`❌ ${result.message}`, 'error');
@@ -705,4 +711,126 @@ function cerrarModalBoleta() {
     document.getElementById('modal-boleta').style.display = 'none';
     document.getElementById('buscador-ventas').focus();
     mostrarAlertaVenta('✅ Venta registrada con éxito');
+}
+
+// alertas (stock bajo / por vencer)
+async function cargarAlertasVentas() {
+    const banner = document.getElementById('alertas-ventas');
+    if (!banner) return;
+    try {
+        const resp = await fetch('/api/alertas_resumen');
+        const data = await resp.json();
+
+        let html = '';
+        if (data.stock_bajo > 0) {
+            html += `<a href="/?bajo_stock=1" class="alerta-chip critica"><i class="fas fa-box-open"></i> ${data.stock_bajo} producto${data.stock_bajo !== 1 ? 's' : ''} con stock bajo</a>`;
+        }
+        if (data.por_vencer > 0) {
+            html += `<a href="/reportes" class="alerta-chip"><i class="fas fa-hourglass-half"></i> ${data.por_vencer} producto${data.por_vencer !== 1 ? 's' : ''} por vencer pronto</a>`;
+        }
+        banner.innerHTML = html;
+        banner.style.display = html ? 'flex' : 'none';
+    } catch (e) {
+        console.error('Error al cargar alertas', e);
+    }
+}
+
+// grilla de accesos rapidos (favoritos + mas vendidos)
+async function cargarAccesosRapidos() {
+    const container = document.getElementById('accesos-rapidos-container');
+    const grid = document.getElementById('accesos-rapidos-grid');
+    if (!container || !grid) return;
+
+    try {
+        const resp = await fetch('/api/accesos_rapidos');
+        const productos = await resp.json();
+        grid.innerHTML = '';
+
+        if (!productos.length) {
+            container.style.display = 'none';
+            return;
+        }
+
+        productos.forEach(p => {
+            const sinStock = p.unidad !== 'Kg' && p.stock !== undefined && p.stock <= 0;
+            const tile = document.createElement('div');
+            tile.className = 'acceso-rapido-tile' + (sinStock ? ' sin-stock' : '');
+            tile.title = p.favorito ? 'Favorito' : 'Producto más vendido';
+            tile.innerHTML = `
+                <span class="nombre">${p.nombre}</span>
+                <span class="precio">$${p.precio.toLocaleString('es-CL')}${p.unidad === 'Kg' ? '/kg' : ''}</span>
+            `;
+            tile.addEventListener('click', () => agregarAlCarrito(p));
+            grid.appendChild(tile);
+        });
+
+        container.style.display = 'block';
+    } catch (e) {
+        console.error('Error al cargar accesos rapidos', e);
+    }
+}
+
+// lista de ventas del dia, con opcion de anular sin salir de la pantalla
+async function cargarVentasHoy() {
+    const lista = document.getElementById('ventas-hoy-lista');
+    if (!lista) return;
+
+    try {
+        const hoy = new Date();
+        const fechaStr = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+        const resp = await fetch('/api/ventas_por_dia?fecha=' + fechaStr);
+        const data = await resp.json();
+        const dia = (data.dias && data.dias[0]) || null;
+        const ventas = dia ? dia.ventas : [];
+
+        if (!ventas.length) {
+            lista.innerHTML = '<p class="ventas-hoy-vacio">Todavía no hay ventas hoy</p>';
+            return;
+        }
+
+        lista.innerHTML = '';
+        ventas.forEach(v => {
+            const hora = v.fecha ? v.fecha.split(' ')[1].slice(0, 5) : '--:--';
+            const item = document.createElement('div');
+            item.className = 'ventas-hoy-item' + (v.anulada ? ' anulada' : '');
+            item.innerHTML = `
+                <span><span class="hora">${hora}</span>#${v.id}</span>
+                <span class="total">$${Math.round(v.total).toLocaleString('es-CL')}</span>
+            `;
+            if (!v.anulada) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-anular-mini';
+                btn.title = 'Anular venta';
+                btn.innerHTML = '<i class="fas fa-ban"></i>';
+                btn.addEventListener('click', () => anularVentaDesdeVentas(v.id));
+                item.appendChild(btn);
+            }
+            lista.appendChild(item);
+        });
+    } catch (e) {
+        lista.innerHTML = '<p class="ventas-hoy-vacio">No se pudo cargar</p>';
+        console.error('Error al cargar ventas de hoy', e);
+    }
+}
+
+async function anularVentaDesdeVentas(ventaId) {
+    if (!confirm('¿Anular la venta #' + ventaId + '? El stock se restaurará.')) return;
+    try {
+        const resp = await fetch('/api/anular_venta', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ venta_id: ventaId })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            mostrarAlertaVenta('✅ Venta anulada');
+            cargarVentasHoy();
+            cargarAccesosRapidos();
+            cargarAlertasVentas();
+        } else {
+            mostrarAlertaVenta('❌ ' + result.message, 'error');
+        }
+    } catch (e) {
+        mostrarAlertaVenta('❌ Error de conexión', 'error');
+    }
 }

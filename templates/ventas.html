@@ -56,6 +56,13 @@
                 </div>
             </section>
 
+            <div id="alertas-ventas" class="alertas-ventas-banner" style="display:none;"></div>
+
+            <section class="accesos-rapidos-container" id="accesos-rapidos-container" style="display:none;">
+                <h4 class="accesos-rapidos-titulo"><i class="fas fa-bolt"></i> Accesos Rápidos</h4>
+                <div class="accesos-rapidos-grid" id="accesos-rapidos-grid"></div>
+            </section>
+
             <div class="tabla-container card-shadow">
                 <table class="tabla-ventas" id="tabla-carrito">
                     <thead>
@@ -120,6 +127,13 @@
                     <button class="btn-fiado-discreto" onclick="abrirModalFiado()">
                         <i class="fas fa-book"></i> Anotar Fiado
                     </button>
+                </div>
+            </div>
+
+            <div class="resumen-card card-shadow ventas-hoy-card">
+                <h3><i class="fas fa-receipt"></i> Ventas de Hoy</h3>
+                <div id="ventas-hoy-lista" class="ventas-hoy-lista">
+                    <p class="ventas-hoy-vacio">Cargando...</p>
                 </div>
             </div>
         </div>

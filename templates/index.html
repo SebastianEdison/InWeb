@@ -61,6 +61,11 @@
                 </div>
                 <div class="col col-5" data-label="Acciones">
                     <div class="action-buttons">
+                        <button type="button" class="btn-mini btn-favorito {{ 'activo' if p['favorito'] else '' }}"
+                                title="{{ 'Quitar de accesos rápidos' if p['favorito'] else 'Marcar como acceso rápido en Ventas' }}"
+                                onclick="toggleFavorito(this, {{ p['id'] }})">
+                            {{ '⭐' if p['favorito'] else '☆' }}
+                        </button>
                         <a href="/editar/{{ p['id'] }}" class="btn-mini btn-editar">✏️</a>
                         <button type="button" class="btn-mini btn-eliminar"
                                 onclick="abrirModalEliminar('{{ p.id }}', '{{ p.nombre }}')">

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from tests.conftest import login
 
 
@@ -288,3 +290,79 @@ def test_error_inesperado_no_expone_detalle_tecnico_al_frontend(client):
     assert data['status'] == 'error'
     assert data['message'] == "Ocurrió un error inesperado. Intenta de nuevo."
     assert 'invalid literal' not in data['message']  # el detalle tecnico no se filtra
+
+def _crear_producto(client, codigo, nombre, precio=1000, stock=5):
+    client.post('/agregar', json={
+        'codigo': codigo, 'nombre': nombre, 'precio_venta': precio,
+        'precio_compra': precio // 2, 'stock': stock,
+    })
+    return client.get(f'/buscar_producto?busqueda={nombre}').get_json()[0]['id']
+
+def test_favorito_aparece_primero_en_accesos_rapidos(client):
+    login(client)
+    id_normal = _crear_producto(client, '901', 'ProductoNormal')
+    id_favorito = _crear_producto(client, '902', 'ProductoFavorito')
+
+    resp = client.post('/api/toggle_favorito', json={'producto_id': id_favorito, 'favorito': True})
+    assert resp.get_json()['status'] == 'success'
+
+    accesos = client.get('/api/accesos_rapidos').get_json()
+    ids = [p['id'] for p in accesos]
+    assert id_favorito in ids
+    assert accesos[0]['id'] == id_favorito
+    assert accesos[0]['favorito'] is True
+
+    # se puede desmarcar: como ninguno de los dos productos se ha vendido nunca,
+    # sin ser favorito ya no hay de donde sacarlo (no hay "mas vendidos" que mostrar)
+    client.post('/api/toggle_favorito', json={'producto_id': id_favorito, 'favorito': False})
+    accesos = client.get('/api/accesos_rapidos').get_json()
+    assert accesos == []
+
+def test_accesos_rapidos_se_completa_con_mas_vendidos(client):
+    login(client)
+    id_producto = _crear_producto(client, '903', 'ProductoMasVendido')
+
+    resp = client.post('/api/registrar_venta', json={
+        'carrito': [{'id': id_producto, 'cantidad': 2, 'precio': 1000}],
+        'metodo_pago': 'efectivo',
+    })
+    assert resp.get_json()['status'] == 'success'
+
+    accesos = client.get('/api/accesos_rapidos').get_json()
+    ids = [p['id'] for p in accesos]
+    assert id_producto in ids
+
+def test_alertas_resumen_cuenta_stock_bajo_y_por_vencer(client):
+    login(client)
+    resp = client.get('/api/alertas_resumen').get_json()
+    assert resp == {'stock_bajo': 0, 'por_vencer': 0}
+
+    client.post('/agregar', json={
+        'codigo': '904', 'nombre': 'StockBajo', 'precio_venta': 500,
+        'precio_compra': 200, 'stock': 2, 'stock_minimo': 5,
+    })
+    resp = client.get('/api/alertas_resumen').get_json()
+    assert resp['stock_bajo'] == 1
+
+def test_ventas_del_dia_permite_anular_desde_ventas(client):
+    login(client)
+    id_producto = _crear_producto(client, '905', 'ProductoParaAnular')
+
+    resp = client.post('/api/registrar_venta', json={
+        'carrito': [{'id': id_producto, 'cantidad': 1, 'precio': 1000}],
+        'metodo_pago': 'efectivo',
+    })
+    venta_id = resp.get_json()['venta_id']
+
+    hoy = datetime.now().strftime('%Y-%m-%d')
+    dias = client.get(f'/api/ventas_por_dia?fecha={hoy}').get_json()['dias']
+    assert len(dias) == 1
+    assert dias[0]['ventas'][0]['id'] == venta_id
+    assert dias[0]['ventas'][0]['anulada'] == 0
+
+    resp = client.post('/api/anular_venta', json={'venta_id': venta_id})
+    assert resp.get_json()['status'] == 'success'
+
+    dias = client.get(f'/api/ventas_por_dia?fecha={hoy}').get_json()['dias']
+    assert dias[0]['ventas'][0]['anulada'] == 1
+    assert dias[0]['total_ventas'] == 0  # ya no cuenta en el total del dia

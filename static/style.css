@@ -741,6 +741,96 @@ h1, h2, h3 {
 .separador-resumen { border: 0; border-top: 1px solid var(--border); margin: 15px 0; }
 
 /* =========================================
+   10b. VENTAS - ALERTAS, ACCESOS RAPIDOS, VENTAS DEL DIA
+   ========================================= */
+.alertas-ventas-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.alerta-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.alerta-chip:hover { background: #fef3c7; }
+.alerta-chip.critica { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.alerta-chip.critica:hover { background: #fee2e2; }
+
+.accesos-rapidos-container {
+    background: var(--white);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+}
+
+.accesos-rapidos-titulo {
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.accesos-rapidos-titulo i { color: #f59e0b; }
+
+.accesos-rapidos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+}
+
+.acceso-rapido-tile {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.acceso-rapido-tile:hover { background: #eff6ff; border-color: #93c5fd; transform: translateY(-1px); }
+.acceso-rapido-tile .nombre { display: block; font-weight: 700; font-size: 0.85rem; color: #1e293b; margin-bottom: 4px; }
+.acceso-rapido-tile .precio { display: block; font-size: 0.8rem; color: #3b82f6; font-weight: 600; }
+.acceso-rapido-tile.sin-stock { opacity: 0.5; }
+
+.ventas-hoy-card { position: static; margin-top: 20px; max-height: 340px; display: flex; flex-direction: column; }
+.ventas-hoy-lista { overflow-y: auto; }
+.ventas-hoy-vacio { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 10px 0; }
+
+.ventas-hoy-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+}
+.ventas-hoy-item.anulada { opacity: 0.5; text-decoration: line-through; }
+.ventas-hoy-item .hora { color: #64748b; margin-right: 6px; }
+.ventas-hoy-item .total { font-weight: 700; color: #1e293b; }
+.ventas-hoy-item .btn-anular-mini {
+    background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.9rem; padding: 2px 6px;
+}
+
+/* =========================================
    11. MODAL DE COBRO
    ========================================= */
 #modal-cobro.modal {
