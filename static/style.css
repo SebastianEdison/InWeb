@@ -586,13 +586,17 @@ h1, h2, h3 {
 }
 
 .sugerencia-sin-resultados {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     cursor: default;
     color: #b91c1c;
     background-color: #fef2f2;
     font-weight: 600;
-    gap: 8px;
 }
 .sugerencia-sin-resultados:hover { background-color: #fef2f2; }
+.sugerencia-sin-resultados i { flex-shrink: 0; }
+.sugerencia-sin-resultados span { flex: 1; }
 
 /* =========================================
    9. VENTAS - TABLA DE CARRITO

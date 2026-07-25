@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         const li = document.createElement('li');
                         li.className = 'sugerencia-sin-resultados';
-                        li.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Producto no existe`;
+                        li.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span>Producto no existe</span>`;
                         listaSugerencias.appendChild(li);
                     }
                 } catch (error) {
