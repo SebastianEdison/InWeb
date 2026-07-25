@@ -40,6 +40,18 @@ html, body {
     color: var(--text);
 }
 
+/* footer siempre pegado abajo: si el contenido es corto, el main se estira y
+   lo empuja al fondo de la pantalla; si es largo, queda al final del scroll. */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content-master {
+    flex: 1 0 auto;
+}
+
 h1, h2, h3 {
     color: var(--dark);
 }
@@ -769,12 +781,20 @@ h1, h2, h3 {
 .alerta-chip.critica { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .alerta-chip.critica:hover { background: #fee2e2; }
 
+.ventas-main-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.ventas-main-row .tabla-container { flex: 1 1 auto; min-width: 0; }
+
 .accesos-rapidos-container {
+    flex: 0 0 200px;
     background: var(--white);
     border-radius: 15px;
     box-shadow: var(--shadow);
     padding: 16px 18px;
-    margin-bottom: 20px;
 }
 
 .accesos-rapidos-titulo {
@@ -791,7 +811,7 @@ h1, h2, h3 {
 
 .accesos-rapidos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: 1fr;
     gap: 10px;
 }
 
@@ -1150,6 +1170,10 @@ h1, h2, h3 {
         grid-template-columns: 1fr;
     }
 
+    .ventas-main-row { flex-direction: column; }
+    .accesos-rapidos-container { flex: 1 1 auto; width: 100%; }
+    .accesos-rapidos-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+
     .resumen-card {
         position: static;
         order: -1; /* El resumen va arriba en móvil */
@@ -1336,6 +1360,7 @@ h1, h2, h3 {
 
 /* footer de la app */
 .app-footer {
+    flex-shrink: 0;
     text-align: center;
     padding: 15px 20px;
     margin-top: 30px;
