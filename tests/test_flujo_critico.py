@@ -159,6 +159,31 @@ def test_reponer_stock_conserva_la_fecha_de_vencimiento_mas_proxima(client):
     assert productos[0]['stock'] == 10
     assert productos[0]['fecha_vencimiento'] == '2026-08-01'  # la mas proxima, no la ultima cargada
 
+def test_reponer_stock_usa_la_fecha_nueva_si_ya_no_queda_nada_del_lote_anterior(client):
+    login(client)
+
+    client.post('/agregar', json={
+        'codigo': '777', 'nombre': 'Queso', 'precio_venta': 2000,
+        'precio_compra': 1200, 'stock': 3, 'fecha_vencimiento': '2026-08-01',
+    })
+    producto_id = client.get('/buscar_producto?busqueda=Queso').get_json()[0]['id']
+
+    # se agota el lote viejo (queda en 0)
+    client.post('/api/ajuste_stock', json={
+        'producto_id': producto_id, 'cantidad': -3, 'motivo': 'se vendio todo',
+    })
+    assert client.get('/buscar_producto?busqueda=Queso').get_json()[0]['stock'] == 0
+
+    # se repone con un lote nuevo: como no queda nada del anterior, se usa la fecha nueva
+    client.post('/agregar', json={
+        'codigo': '777', 'nombre': 'Queso', 'precio_venta': 2000,
+        'precio_compra': 1200, 'stock': 4, 'fecha_vencimiento': '2026-10-20',
+    })
+
+    productos = client.get('/buscar_producto?busqueda=Queso').get_json()
+    assert productos[0]['stock'] == 4
+    assert productos[0]['fecha_vencimiento'] == '2026-10-20'
+
 def test_eliminar_producto_es_soft_delete(client):
     login(client)
     client.post('/agregar', json={

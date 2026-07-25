@@ -17,10 +17,14 @@ def agregar_producto(codigo, nombre, precio, costo, stock, unidad='Unidad', fech
             nuevo_total = stock_actual + int(stock)
 
             # Al reponer stock puede llegar un lote con otra fecha de vencimiento. Como solo
-            # guardamos una fecha por producto (no por lote), nos quedamos con la mas proxima
-            # de las dos: es la que hay que vender/alertar primero, sin importar en que lote este.
+            # guardamos una fecha por producto (no por lote): si ya no queda nada del lote
+            # anterior, esa fecha vieja no aplica a ningun producto real y se reemplaza por la
+            # nueva. Si todavia queda stock mezclado, nos quedamos con la mas proxima de las
+            # dos para no perder la alerta del lote mas antiguo.
             fecha_anterior = existente['fecha_vencimiento']
-            if fecha_anterior and fecha_vencimiento:
+            if stock_actual <= 0:
+                fecha_final = fecha_vencimiento or fecha_anterior
+            elif fecha_anterior and fecha_vencimiento:
                 fecha_final = min(fecha_anterior, fecha_vencimiento)
             else:
                 fecha_final = fecha_vencimiento or fecha_anterior
