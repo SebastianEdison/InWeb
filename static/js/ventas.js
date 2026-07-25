@@ -53,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     listaSugerencias.innerHTML = "";
+                    listaSugerencias.style.display = "block";
                     if (productos.length > 0) {
-                        listaSugerencias.style.display = "block";
                         productos.forEach(p => {
                             const li = document.createElement('li');
                             li.innerHTML = `
@@ -73,6 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             listaSugerencias.appendChild(li);
                         });
+                    } else {
+                        const li = document.createElement('li');
+                        li.className = 'sugerencia-sin-resultados';
+                        li.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Producto no existe`;
+                        listaSugerencias.appendChild(li);
                     }
                 } catch (error) {
                     console.error("Error en búsqueda:", error);

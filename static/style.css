@@ -585,6 +585,15 @@ h1, h2, h3 {
     margin-left: 10px;
 }
 
+.sugerencia-sin-resultados {
+    cursor: default;
+    color: #b91c1c;
+    background-color: #fef2f2;
+    font-weight: 600;
+    gap: 8px;
+}
+.sugerencia-sin-resultados:hover { background-color: #fef2f2; }
+
 /* =========================================
    9. VENTAS - TABLA DE CARRITO
    ========================================= */
