@@ -781,20 +781,18 @@ h1, h2, h3 {
 .alerta-chip.critica { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .alerta-chip.critica:hover { background: #fee2e2; }
 
-.ventas-main-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-}
-
-.ventas-main-row .tabla-container { flex: 1 1 auto; min-width: 0; }
+/* Por defecto: tarjeta compacta arriba de la tabla, del ancho justo para su
+   contenido (no estira a lo ancho para no dejar espacio muerto). */
+.ventas-layout { position: relative; }
 
 .accesos-rapidos-container {
-    flex: 0 0 200px;
+    width: fit-content;
+    max-width: 100%;
     background: var(--white);
     border-radius: 15px;
     box-shadow: var(--shadow);
     padding: 16px 18px;
+    margin-bottom: 20px;
 }
 
 .accesos-rapidos-titulo {
@@ -811,8 +809,23 @@ h1, h2, h3 {
 
 .accesos-rapidos-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 10px;
+}
+
+/* En pantallas muy anchas hay margen libre a los costados del contenido
+   (container-fluid-custom tiene max-width). Ahi los accesos rapidos flotan
+   en ese margen izquierdo en vez de compartir fila con la tabla, para que
+   esta ultima no pierda ni un pixel de ancho. */
+@media (min-width: 2100px) {
+    .accesos-rapidos-container {
+        position: absolute;
+        top: 0;
+        right: 100%;
+        margin-right: 20px;
+        width: 190px;
+    }
+    .accesos-rapidos-grid { grid-template-columns: 1fr; }
 }
 
 .acceso-rapido-tile {
@@ -1170,9 +1183,7 @@ h1, h2, h3 {
         grid-template-columns: 1fr;
     }
 
-    .ventas-main-row { flex-direction: column; }
-    .accesos-rapidos-container { flex: 1 1 auto; width: 100%; }
-    .accesos-rapidos-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    .accesos-rapidos-container { width: 100%; }
 
     .resumen-card {
         position: static;
