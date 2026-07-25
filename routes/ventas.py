@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 
 from db.ventas import registrar_venta, anular_venta_db, obtener_ventas_por_dia
 from db.productos import obtener_accesos_rapidos, contar_alertas
+from db.config import obtener_config_db
 from utils.decorators import login_requerido
 from utils.errores import respuesta_error
 
@@ -11,7 +12,9 @@ ventas_bp = Blueprint('ventas', __name__)
 @ventas_bp.route('/ventas')
 @login_requerido
 def ventas():
-    return render_template('ventas.html')
+    config = obtener_config_db()
+    aplica_iva = config.get('aplica_iva', '1') != '0'
+    return render_template('ventas.html', aplica_iva=aplica_iva)
 
 @ventas_bp.route('/api/registrar_venta', methods=['POST'])
 @login_requerido

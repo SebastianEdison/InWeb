@@ -366,3 +366,37 @@ def test_ventas_del_dia_permite_anular_desde_ventas(client):
     dias = client.get(f'/api/ventas_por_dia?fecha={hoy}').get_json()['dias']
     assert dias[0]['ventas'][0]['anulada'] == 1
     assert dias[0]['total_ventas'] == 0  # ya no cuenta en el total del dia
+
+def test_toggle_iva_se_refleja_en_la_pagina_de_ventas(client):
+    login(client)
+
+    resp = client.get('/ventas')
+    assert b'window.APLICA_IVA = true;' in resp.data
+    assert b'sin-iva' not in resp.data
+
+    client.post('/api/guardar_config', json={'aplica_iva': '0'})
+    resp = client.get('/ventas')
+    assert b'window.APLICA_IVA = false;' in resp.data
+    assert b'sin-iva' in resp.data
+
+    client.post('/api/guardar_config', json={'aplica_iva': '1'})  # se deja como estaba
+
+def test_telefono_negocio_se_guarda_y_se_lee(client):
+    login(client)
+
+    resp = client.post('/api/guardar_config', json={'telefono_negocio': '+56912345678'})
+    assert resp.get_json()['status'] == 'success'
+
+    config = client.get('/api/obtener_config').get_json()
+    assert config['telefono_negocio'] == '+56912345678'
+
+def test_buscar_producto_incluye_estado_de_favorito(client):
+    login(client)
+    id_producto = _crear_producto(client, '906', 'ProductoConFavorito')
+
+    productos = client.get('/buscar_producto?busqueda=ProductoConFavorito').get_json()
+    assert productos[0]['favorito'] is False
+
+    client.post('/api/toggle_favorito', json={'producto_id': id_producto, 'favorito': True})
+    productos = client.get('/buscar_producto?busqueda=ProductoConFavorito').get_json()
+    assert productos[0]['favorito'] is True

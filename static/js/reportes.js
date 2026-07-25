@@ -410,11 +410,13 @@ async function cargarConfig() {
     panel.innerHTML = '<p style="text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando...</p>';
 
     try {
-        const respConfig   = await fetch('/api/obtener_config');
-        const respUsuarios = await fetch('/api/usuarios');
-        const config       = await respConfig.json();
-        const dataUsuarios = await respUsuarios.json();
-        const usuarios     = dataUsuarios.usuarios || [];
+        const respConfig    = await fetch('/api/obtener_config');
+        const respUsuarios  = await fetch('/api/usuarios');
+        const respProductos = await fetch('/buscar_producto?busqueda=');
+        const config        = await respConfig.json();
+        const dataUsuarios  = await respUsuarios.json();
+        const usuarios      = dataUsuarios.usuarios || [];
+        const productos     = await respProductos.json();
 
         var listaUsuarios = usuarios.map(function(u) {
             return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:white; border-radius:8px; margin-bottom:6px; border:1px solid #e2e8f0;' + (u.activo ? '' : 'opacity:0.5;') + '">' +
@@ -428,6 +430,14 @@ async function cargarConfig() {
                 '</div></div>';
         }).join('');
 
+        var listaProductosAccesos = productos.map(function(p) {
+            return '<div class="fila-acceso-config" data-nombre="' + p.nombre.toLowerCase() + '" style="display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:white; border-radius:8px; margin-bottom:5px; border:1px solid #e2e8f0;">' +
+                '<span style="font-weight:600; color:#1e293b; font-size:0.85rem;">' + p.nombre + '</span>' +
+                '<button onclick="toggleFavoritoConfig(this, ' + p.id + ')" class="' + (p.favorito ? 'activo' : '') + '" style="background:none; border:none; cursor:pointer; font-size:1.1rem;">' +
+                (p.favorito ? '⭐' : '☆') +
+                '</button></div>';
+        }).join('');
+
         panel.innerHTML =
             '<div style="display:grid; grid-template-columns:1fr 1fr; gap:25px;">' +
 
@@ -438,6 +448,8 @@ async function cargarConfig() {
             '<input type="text" id="cfg-nombre" value="' + (config.nombre_negocio||'') + '" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem; outline:none; box-sizing:border-box;"></div>' +
             '<div style="margin-bottom:12px;"><label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:5px;">RUT</label>' +
             '<input type="text" id="cfg-rut" value="' + (config.rut_negocio||'') + '" placeholder="12.345.678-9" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem; outline:none; box-sizing:border-box;"></div>' +
+            '<div style="margin-bottom:12px;"><label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase; display:block; margin-bottom:5px;">Teléfono</label>' +
+            '<input type="text" id="cfg-telefono" value="' + (config.telefono_negocio||'') + '" placeholder="+56 9 1234 5678" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem; outline:none; box-sizing:border-box;"></div>' +
             '<div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">' +
             '<label style="font-size:0.8rem; font-weight:700; color:#475569; text-transform:uppercase;">Aplica IVA (19%)</label>' +
             '<input type="checkbox" id="cfg-iva" ' + (config.aplica_iva === '1' ? 'checked' : '') + ' style="width:18px; height:18px; cursor:pointer;"></div>' +
@@ -470,6 +482,15 @@ async function cargarConfig() {
             '</div>' +
             '</div>' +
 
+            // Accesos rapidos
+            '<div style="grid-column:1/-1; background:#f8fafc; border-radius:12px; padding:20px;">' +
+            '<h4 style="color:#1e293b; margin:0 0 8px 0; display:flex; align-items:center; gap:8px;"><i class="fas fa-bolt" style="color:#f59e0b;"></i> Gestionar Accesos Rápidos</h4>' +
+            '<p style="font-size:0.8rem; color:#64748b; margin:0 0 12px 0;">Marca los productos que quieres que aparezcan siempre primero en Ventas.</p>' +
+            '<input type="text" id="filtro-accesos-config" placeholder="Buscar producto..." oninput="filtrarListaAccesosConfig()" ' +
+            'style="width:100%; padding:9px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.85rem; outline:none; margin-bottom:10px; box-sizing:border-box;">' +
+            '<div id="lista-accesos-config" style="max-height:220px; overflow-y:auto;">' + (listaProductosAccesos || '<p style="color:#94a3b8; font-size:0.85rem;">No hay productos.</p>') + '</div>' +
+            '</div>' +
+
             '</div>';
 
         } catch(e) {
@@ -488,9 +509,10 @@ async function cargarConfig() {
 
 async function guardarConfig() {
     const datos = {
-        nombre_negocio: document.getElementById('cfg-nombre').value.trim(),
-        rut_negocio:    document.getElementById('cfg-rut').value.trim(),
-        aplica_iva:     document.getElementById('cfg-iva').checked ? '1' : '0'
+        nombre_negocio:   document.getElementById('cfg-nombre').value.trim(),
+        rut_negocio:      document.getElementById('cfg-rut').value.trim(),
+        telefono_negocio: document.getElementById('cfg-telefono').value.trim(),
+        aplica_iva:       document.getElementById('cfg-iva').checked ? '1' : '0'
     };
     try {
         const resp = await fetch('/api/guardar_config', {
@@ -579,6 +601,33 @@ async function resetearPasswordUsuario(usuarioId, nombre) {
     } catch(e) {
         mostrarAlerta('❌ Error de conexion', 'error');
     }
+}
+
+async function toggleFavoritoConfig(boton, productoId) {
+    const eraFavorito = boton.classList.contains('activo');
+    try {
+        const resp = await fetch('/api/toggle_favorito', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ producto_id: productoId, favorito: !eraFavorito })
+        });
+        const result = await resp.json();
+        if (result.status === 'success') {
+            boton.classList.toggle('activo');
+            boton.textContent = eraFavorito ? '☆' : '⭐';
+        } else {
+            mostrarAlerta('❌ ' + result.message, 'error');
+        }
+    } catch(e) {
+        mostrarAlerta('❌ Error de conexion', 'error');
+    }
+}
+
+function filtrarListaAccesosConfig() {
+    const filtro = document.getElementById('filtro-accesos-config').value.trim().toLowerCase();
+    document.querySelectorAll('#lista-accesos-config .fila-acceso-config').forEach(function(fila) {
+        fila.style.display = fila.getAttribute('data-nombre').includes(filtro) ? 'flex' : 'none';
+    });
 }
 
 // modal saldar fiado

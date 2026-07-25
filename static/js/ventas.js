@@ -1,6 +1,14 @@
 // config del negocio cargada al inicio para la boleta
 let _configNegocio = {};
 
+// window.APLICA_IVA lo define el propio ventas.html (ya sabe el valor guardado en Configuracion
+// antes de que cargue este script, asi no hay parpadeo esperando el fetch de /api/obtener_config)
+const _ivaActivo = typeof window.APLICA_IVA === 'undefined' ? true : window.APLICA_IVA;
+
+function netoDeTotal(total) {
+    return _ivaActivo ? Math.round(total / 1.19) : total;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-ventas');
     const listaSugerencias = document.getElementById('lista-sugerencias');
@@ -162,8 +170,8 @@ function agregarAlCarrito(p) {
                 </div>
             </td>
             <td class="celda-precio-unitario">$${p.precio.toLocaleString('es-CL')}</td>
-            <td class="celda-neto">$${Math.round(p.precio / 1.19).toLocaleString('es-CL')}</td>
-            <td class="celda-iva">$${(p.precio - Math.round(p.precio / 1.19)).toLocaleString('es-CL')}</td>
+            <td class="celda-neto">$${netoDeTotal(p.precio).toLocaleString('es-CL')}</td>
+            <td class="celda-iva">$${(p.precio - netoDeTotal(p.precio)).toLocaleString('es-CL')}</td>
             <td class="celda-total-fila"><strong>$${p.precio.toLocaleString('es-CL')}</strong></td>
             <td>
                 <button class="btn-eliminar-fila" onclick="eliminarFila(this)">
@@ -211,7 +219,7 @@ function confirmarProductoPeso() {
     }
 
     const p    = _productoKgPendiente;
-    const neto = Math.round(totalFila / 1.19);
+    const neto = netoDeTotal(totalFila);
     const iva  = totalFila - neto;
 
     const cuerpoTabla = document.getElementById('cuerpo-tabla-ventas');
@@ -417,7 +425,7 @@ function cambiarCantidad(btn, delta, precioBase, stock) {
 
 function recalcularFila(fila, precio, cantidad) {
     const nuevoTotal = precio * cantidad;
-    const nuevoNeto  = Math.round(nuevoTotal / 1.19);
+    const nuevoNeto  = netoDeTotal(nuevoTotal);
     const nuevoIva   = nuevoTotal - nuevoNeto;
 
     fila.querySelector('.celda-neto').textContent     = `$${nuevoNeto.toLocaleString('es-CL')}`;
@@ -468,8 +476,8 @@ function actualizarTotalesGenerales() {
     }
 
     document.getElementById('gran-total').textContent = `$${granTotal.toLocaleString('es-CL')}`;
-    document.getElementById('total-neto').textContent = `$${Math.round(granTotal / 1.19).toLocaleString('es-CL')}`;
-    document.getElementById('total-iva').textContent  = `$${(granTotal - Math.round(granTotal / 1.19)).toLocaleString('es-CL')}`;
+    document.getElementById('total-neto').textContent = `$${netoDeTotal(granTotal).toLocaleString('es-CL')}`;
+    document.getElementById('total-iva').textContent  = `$${(granTotal - netoDeTotal(granTotal)).toLocaleString('es-CL')}`;
 }
 
 // guardar y recuperar carrito desde localStorage
@@ -654,8 +662,9 @@ function cancelarVenta() {
 
 // boleta imprimible
 function mostrarBoleta(ventaId, carrito, total, metodo) {
-    const negocio = _configNegocio.nombre_negocio || 'EL HISTORICO';
-    const rut     = _configNegocio.rut_negocio || '';
+    const negocio  = _configNegocio.nombre_negocio || 'EL HISTORICO';
+    const rut      = _configNegocio.rut_negocio || '';
+    const telefono = _configNegocio.telefono_negocio || '';
     const ahora   = new Date();
     const fecha   = ahora.toLocaleDateString('es-CL');
     const hora    = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
@@ -684,6 +693,7 @@ function mostrarBoleta(ventaId, carrito, total, metodo) {
         <div class="boleta-header">
             <h3>${negocio}</h3>
             ${rut ? '<p>' + rut + '</p>' : ''}
+            ${telefono ? '<p>' + telefono + '</p>' : ''}
             <p>${fecha} ${hora}</p>
         </div>
         <div class="boleta-num">Venta #${ventaId}</div>

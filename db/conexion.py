@@ -140,6 +140,7 @@ def crear_tablas():
     configs = [
         ('nombre_negocio', 'EL HISTORICO'),
         ('rut_negocio', ''),
+        ('telefono_negocio', ''),
         ('aplica_iva', '1'),
     ]
     for clave, valor in configs:

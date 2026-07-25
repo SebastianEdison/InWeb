@@ -666,6 +666,17 @@ h1, h2, h3 {
 }
 .btn-eliminar-fila:hover, .btn-eliminar-item:hover { color: #b91c1c; background: #fee2e2; }
 
+/* Negocio sin IVA (toggle en Configuracion): se ocultan las columnas/filas
+   de neto e iva por completo, en vez de mostrarlas siempre en $0. */
+.ventas-layout.sin-iva .col-neto,
+.ventas-layout.sin-iva .col-iva,
+.ventas-layout.sin-iva .celda-neto,
+.ventas-layout.sin-iva .celda-iva,
+.ventas-layout.sin-iva .fila-neto,
+.ventas-layout.sin-iva .fila-iva {
+    display: none;
+}
+
 /* =========================================
    10. VENTAS - PANEL RESUMEN (SIDEBAR)
    ========================================= */

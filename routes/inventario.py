@@ -105,7 +105,8 @@ def buscar_producto():
             "codigo_barra": p['codigo_barra'],
             "stock": p['stock'],
             "fecha_vencimiento": p['fecha_vencimiento'] if p['fecha_vencimiento'] else None,
-            "categoria": p['categoria'] if p['categoria'] else 'General'
+            "categoria": p['categoria'] if p['categoria'] else 'General',
+            "favorito": bool(p['favorito'])
         })
     return jsonify(lista)
 
