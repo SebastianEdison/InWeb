@@ -15,6 +15,7 @@ function seleccionarTipo(tipo) {
     const columnaCantidad = document.getElementById('columna-cantidad');
     const selectUnidad = document.getElementById('form_unidad');
     const contenedorVencimiento = document.getElementById('contenedor-vencimiento');
+    const ayudaVencimiento = document.querySelector('.ayuda-vencimiento');
     const opcionSinStock = document.getElementById('opcion-sin-stock');
     const chkVentaLibre = document.getElementById('chk_venta_libre');
     const inputStock = document.getElementById('form_stock');
@@ -36,6 +37,7 @@ function seleccionarTipo(tipo) {
         if(columnaCantidad) columnaCantidad.style.flex = "1";
         if(selectUnidad) selectUnidad.value = "Unidad";
         if(contenedorVencimiento) contenedorVencimiento.style.display = '';
+        if(ayudaVencimiento) ayudaVencimiento.style.display = '';
         if(opcionSinStock) opcionSinStock.style.display = '';
 
     }  else {
@@ -56,6 +58,7 @@ function seleccionarTipo(tipo) {
             contenedorVencimiento.style.display = 'none';
             document.getElementById('form_vencimiento').value = '';
         }
+        if(ayudaVencimiento) ayudaVencimiento.style.display = 'none';
         if(opcionSinStock) opcionSinStock.style.display = 'none';
         if(chkVentaLibre && chkVentaLibre.checked) {
             chkVentaLibre.checked = false;

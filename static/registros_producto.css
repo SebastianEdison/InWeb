@@ -166,7 +166,7 @@ body {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
-    border: 2px solid #94a3b8;
+    border: 3px solid #64748b;
     background-color: #f8fafc;
     font-size: 1.15rem; /* Lectura clara */
     color: #334155;
@@ -233,7 +233,13 @@ body {
 .grupo-producto .grupo-titulo i    { background: #eff6ff; color: #3b82f6; }
 .grupo-precios .grupo-titulo i     { background: #ecfdf5; color: #10b981; }
 .grupo-inventario .grupo-titulo i  { background: #f5f3ff; color: #8b5cf6; }
-.grupo-vencimiento .grupo-titulo i { background: #fff7ed; color: #f59e0b; }
+
+.ayuda-vencimiento {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 8px;
+}
 
 /* --- CAJA INTERNA DE INVENTARIO (cantidad, medida, minimo, venta libre) --- */
 .caja-inventario {
@@ -381,7 +387,7 @@ input:checked + .slider:before {
     width: 100%;
     padding: 17px 20px;
     border-radius: 14px;
-    border: 2px solid #94a3b8;
+    border: 3px solid #64748b;
     background-color: #f8fafc;
     color: #334155;
     font-size: 1.05rem;
