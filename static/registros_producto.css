@@ -166,7 +166,7 @@ body {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #cbd5e1;
     background-color: #f8fafc;
     font-size: 1.15rem; /* Lectura clara */
     color: #334155;
@@ -185,6 +185,12 @@ body {
 .form-grid-precios {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.form-grid-producto {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
     gap: 25px;
 }
 
@@ -226,6 +232,7 @@ body {
 /* --- CAJA INTERNA DE INVENTARIO (cantidad, medida, minimo, venta libre) --- */
 .caja-inventario {
     background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 18px;
     padding: 24px;
 }
@@ -366,12 +373,21 @@ input:checked + .slider:before {
 
 .select-moderno {
     width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background-color: #f9f9f9;
-    color: #333;
+    padding: 17px 20px;
+    border-radius: 14px;
+    border: 2px solid #cbd5e1;
+    background-color: #f8fafc;
+    color: #334155;
+    font-size: 1.05rem;
     font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.select-moderno:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background-color: white;
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.08);
 }
 
 /* texto de ayuda bajo el campo */
