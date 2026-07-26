@@ -166,7 +166,7 @@ body {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
-    border: 3px solid #64748b;
+    border: 3px solid #1e293b;
     background-color: #f8fafc;
     font-size: 1.15rem; /* Lectura clara */
     color: #334155;
@@ -387,7 +387,7 @@ input:checked + .slider:before {
     width: 100%;
     padding: 17px 20px;
     border-radius: 14px;
-    border: 3px solid #64748b;
+    border: 3px solid #1e293b;
     background-color: #f8fafc;
     color: #334155;
     font-size: 1.05rem;
