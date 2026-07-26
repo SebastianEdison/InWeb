@@ -166,7 +166,7 @@ body {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
-    border: 3px solid #1e293b;
+    border: 3px solid #3b82f6;
     background-color: #f8fafc;
     font-size: 1.15rem; /* Lectura clara */
     color: #334155;
@@ -176,9 +176,9 @@ body {
 
 .input-pro:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #1d4ed8;
     background-color: white;
-    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.08);
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.2);
     transform: translateY(-1px);
 }
 
@@ -387,7 +387,7 @@ input:checked + .slider:before {
     width: 100%;
     padding: 17px 20px;
     border-radius: 14px;
-    border: 3px solid #1e293b;
+    border: 3px solid #3b82f6;
     background-color: #f8fafc;
     color: #334155;
     font-size: 1.05rem;
@@ -397,7 +397,7 @@ input:checked + .slider:before {
 
 .select-moderno:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #1d4ed8;
     background-color: white;
     box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.08);
 }
