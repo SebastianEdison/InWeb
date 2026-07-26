@@ -527,7 +527,7 @@ h1, h2, h3 {
     align-items: center;
 }
 
-.input-with-icon i {
+.input-with-icon > i {
     position: absolute;
     left: 15px;
     color: #94a3b8;
