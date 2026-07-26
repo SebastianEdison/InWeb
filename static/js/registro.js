@@ -4,16 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputSearch) inputSearch.focus();
 });
 
-// mostrar/ocultar precio de compra, categoria, stock minimo y vencimiento
-function toggleDetallesAvanzados(forzarAbierto) {
-    const panel = document.getElementById('detalles-avanzados');
-    const boton = document.getElementById('btn-toggle-avanzado');
-    const abrir = forzarAbierto !== undefined ? forzarAbierto : !panel.classList.contains('abierto');
-
-    panel.classList.toggle('abierto', abrir);
-    boton.classList.toggle('abierto', abrir);
-}
-
 // cambiar entre modo código y modo peso
 function seleccionarTipo(tipo) {
     document.getElementById('tipo_registro_actual').value = tipo;
@@ -157,7 +147,6 @@ function resetearTodo() {
     if(form) form.reset();
     document.getElementById('form_vencimiento').value = ''; // ← limpiar fecha
     seleccionarTipo('codigo');
-    toggleDetallesAvanzados(false);
 }
 
 // buscar datos del producto por código
@@ -179,12 +168,6 @@ async function buscarDatosProducto() {
             document.getElementById('form_categoria').value = data.categoria || "General";
 
             if(data.unidad) document.getElementById('form_unidad').value = data.unidad;
-
-            // el producto ya tiene precio de compra o categoria propia: mostramos el panel
-            // para que se vea lo que se va a guardar, en vez de dejarlo escondido
-            if (data.costo || (data.categoria && data.categoria !== 'General')) {
-                toggleDetallesAvanzados(true);
-            }
 
             mostrarAlerta("📦 Producto encontrado", "success");
             document.getElementById('form_stock').focus();

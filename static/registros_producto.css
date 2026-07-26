@@ -133,8 +133,10 @@ body {
 .lbl-orange { color: #f59e0b; }
 .lbl-purple { color: #8b5cf6; }
 
-/* INPUTS (Texto grande y claro para lectura rápida) */
-#form_nombre, .form-grid-precios input, #form_stock {
+/* INPUTS (Texto grande y claro para lectura rápida). Clase compartida en vez
+   de una lista de #ids, para que cualquier input nuevo se vea consistente
+   sin tener que acordarse de agregarlo a un selector aparte. */
+.input-pro {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
@@ -146,7 +148,7 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#form_nombre:focus, .form-grid-precios input:focus, #form_stock:focus {
+.input-pro:focus {
     outline: none;
     border-color: #3b82f6;
     background-color: white;
@@ -158,18 +160,48 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 25px;
-    margin: 25px 0;
 }
 
-/* --- SECCIÓN STOCK Y TOGGLE --- */
-.stock-container-modern {
-    background: #f1f5f9;
-    padding: 22px;
-    border-radius: 18px;
-    margin-top: 35px;
+/* --- SECCIONES TEMATICAS DEL FORMULARIO --- */
+.grupo-campos {
+    margin-bottom: 32px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.grupo-campos:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.grupo-titulo {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #1e293b;
+    margin-bottom: 20px;
+}
+
+.grupo-titulo i {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+.grupo-producto .grupo-titulo i    { background: #eff6ff; color: #3b82f6; }
+.grupo-precios .grupo-titulo i     { background: #ecfdf5; color: #10b981; }
+.grupo-inventario .grupo-titulo i  { background: #f5f3ff; color: #8b5cf6; }
+.grupo-vencimiento .grupo-titulo i { background: #fff7ed; color: #f59e0b; }
+
+/* --- CAJA INTERNA DE INVENTARIO (cantidad, medida, minimo, venta libre) --- */
+.caja-inventario {
+    background: #f8fafc;
+    border-radius: 18px;
+    padding: 24px;
 }
 
 .switch-texto strong {
@@ -188,8 +220,9 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding-left: 15px;
-    border-left: none !important;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
 }
 
 .switch-container {
@@ -282,11 +315,17 @@ input:checked + .slider:before {
     border-color: #cbd5e1;
 }
 
-/* --- STOCK: fila con cantidad y selector de unidad --- */
+/* --- STOCK: fila con cantidad, medida y stock minimo --- */
 .input-grupal-stock {
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
     align-items: flex-end;
+}
+
+.input-grupal-stock .form-group {
+    flex: 1;
+    min-width: 140px;
 }
 
 #contenedor-medida {
@@ -309,54 +348,14 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
-/* --- BOTON "MAS DETALLES" (desplegable) --- */
-.btn-toggle-avanzado {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f8fafc;
-    border: 2px dashed #e2e8f0;
-    border-radius: 14px;
-    padding: 16px 22px;
-    margin-top: 30px;
-    cursor: pointer;
-    color: #475569;
-    font-weight: 700;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-}
-.btn-toggle-avanzado:hover { background: #f1f5f9; border-color: #cbd5e1; }
-.btn-toggle-avanzado i.fa-sliders-h { color: #3b82f6; margin-right: 8px; }
-
-.icono-chevron { transition: transform 0.25s ease; }
-.btn-toggle-avanzado.abierto .icono-chevron { transform: rotate(180deg); }
-
-.detalles-avanzados {
-    display: none;
-    padding-top: 28px;
-}
-.detalles-avanzados.abierto { display: block; }
-
-/* --- CAMPO FECHA DE VENCIMIENTO --- */
-#form_vencimiento {
-    width: 100%;
-    padding: 18px 22px;
-    border-radius: 14px;
-    border: 2px solid #e2e8f0;
-    background-color: #f8fafc;
-    font-size: 1rem;
-    color: #334155;
-    outline: none;
-    transition: all 0.3s;
-}
-
 /* texto de ayuda bajo el campo */
-.form-group-full small {
+.form-group-full small, .grupo-campos > small {
     color: #94a3b8;
-    margin-top: 4px;
+    margin-top: 8px;
     display: block;
 }
+
+#form_vencimiento { max-width: 280px; }
 
 /* etiqueta "opcional" en labels */
 .lbl-opcional {

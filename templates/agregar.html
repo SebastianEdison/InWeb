@@ -58,65 +58,15 @@
         </div>
 
         <form id="form-ingreso-completo" onsubmit="procesarIngreso(event)">
-            <div class="form-group-full">
-                <label class="lbl-blue"><i class="fas fa-tag"></i> Nombre del Producto</label>
-                <input type="text" id="form_nombre" required placeholder="Ej: Kuchen de Manzana">
-            </div>
 
-            <div class="form-group-full">
-                <label class="lbl-orange"><i class="fas fa-arrow-up"></i> Precio de Venta</label>
-                <input type="number" id="form_pventa" step="any" placeholder="0.00" required>
-            </div>
-
-            <div class="stock-container-modern">
-                <div class="input-grupal-stock">
-                    <div class="form-group" id="columna-cantidad">
-                        <label class="lbl-purple" id="label-stock-text"><i class="fas fa-boxes"></i> Cantidad Actual</label>
-                        <input type="number" id="form_stock" placeholder="0">
-                    </div>
-
-                    <div class="form-group" id="contenedor-medida">
-                        <label class="lbl-blue"><i class="fas fa-weight"></i> Medida</label>
-                        <select id="form_unidad" class="select-moderno">
-                            <option value="Unidad">Unidad</option>
-                            <option value="Kg">Kilogramo</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="opcion-sin-stock">
-                    <label class="switch-container">
-                        <input type="checkbox" id="chk_venta_libre">
-                        <span class="slider"></span>
-                    </label>
-                    <div class="switch-texto">
-                        <strong>Venta Libre / Sin Stock</strong>
-                        <p>Para productos que no requieren inventario</p>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" class="btn-toggle-avanzado" id="btn-toggle-avanzado" onclick="toggleDetallesAvanzados()">
-                <span><i class="fas fa-sliders-h"></i> Más detalles <span class="lbl-opcional">(precio de compra, categoría, stock mínimo, vencimiento)</span></span>
-                <i class="fas fa-chevron-down icono-chevron" id="icono-chevron-avanzado"></i>
-            </button>
-
-            <div id="detalles-avanzados" class="detalles-avanzados">
-                <div class="form-grid-precios">
-                    <div class="form-group">
-                        <label class="lbl-green"><i class="fas fa-arrow-down"></i> P. Compra</label>
-                        <input type="number" id="form_pcompra" step="any" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label class="lbl-orange"><i class="fas fa-exclamation-triangle"></i> Stock Mínimo
-                            <span class="lbl-opcional">(alerta)</span>
-                        </label>
-                        <input type="number" id="form_stock_minimo" placeholder="0" min="0" value="0">
-                    </div>
-                </div>
-
+            <div class="grupo-campos grupo-producto">
+                <div class="grupo-titulo"><i class="fas fa-tag"></i> Producto</div>
                 <div class="form-group-full">
-                    <label class="lbl-blue"><i class="fas fa-tag"></i> Categoría</label>
+                    <label class="lbl-blue">Nombre</label>
+                    <input type="text" id="form_nombre" class="input-pro" required placeholder="Ej: Kuchen de Manzana">
+                </div>
+                <div class="form-group-full">
+                    <label class="lbl-blue">Categoría</label>
                     <select id="form_categoria" class="select-moderno">
                         <option value="General">General</option>
                         <option value="Lácteos">Lácteos</option>
@@ -129,15 +79,64 @@
                         <option value="Otro">Otro</option>
                     </select>
                 </div>
+            </div>
 
-                <div class="form-group-full" id="contenedor-vencimiento">
-                    <label class="lbl-blue">
-                        <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
-                        <span class="lbl-opcional">(opcional)</span>
-                    </label>
-                    <input type="date" id="form_vencimiento">
-                    <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
+            <div class="grupo-campos grupo-precios">
+                <div class="grupo-titulo"><i class="fas fa-dollar-sign"></i> Precios</div>
+                <div class="form-grid-precios">
+                    <div class="form-group">
+                        <label class="lbl-orange"><i class="fas fa-arrow-up"></i> Venta</label>
+                        <input type="number" id="form_pventa" class="input-pro" step="any" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="lbl-green"><i class="fas fa-arrow-down"></i> Compra
+                            <span class="lbl-opcional">(opcional)</span>
+                        </label>
+                        <input type="number" id="form_pcompra" class="input-pro" step="any" placeholder="0.00">
+                    </div>
                 </div>
+            </div>
+
+            <div class="grupo-campos grupo-inventario">
+                <div class="grupo-titulo"><i class="fas fa-boxes"></i> Inventario</div>
+                <div class="caja-inventario">
+                    <div class="input-grupal-stock">
+                        <div class="form-group" id="columna-cantidad">
+                            <label class="lbl-purple" id="label-stock-text">Cantidad Actual</label>
+                            <input type="number" id="form_stock" class="input-pro" placeholder="0">
+                        </div>
+
+                        <div class="form-group" id="contenedor-medida">
+                            <label class="lbl-blue">Medida</label>
+                            <select id="form_unidad" class="select-moderno">
+                                <option value="Unidad">Unidad</option>
+                                <option value="Kg">Kilogramo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="lbl-orange">Stock Mínimo <span class="lbl-opcional">(alerta)</span></label>
+                            <input type="number" id="form_stock_minimo" class="input-pro" placeholder="0" min="0" value="0">
+                        </div>
+                    </div>
+
+                    <div class="opcion-sin-stock">
+                        <label class="switch-container">
+                            <input type="checkbox" id="chk_venta_libre">
+                            <span class="slider"></span>
+                        </label>
+                        <div class="switch-texto">
+                            <strong>Venta Libre / Sin Stock</strong>
+                            <p>Para productos que no requieren inventario</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grupo-campos grupo-vencimiento" id="contenedor-vencimiento">
+                <div class="grupo-titulo"><i class="fas fa-calendar-times"></i> Vencimiento <span class="lbl-opcional">(opcional)</span></div>
+                <input type="date" id="form_vencimiento" class="input-pro">
+                <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
             </div>
 
             <div class="form-acciones">
