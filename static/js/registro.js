@@ -4,6 +4,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputSearch) inputSearch.focus();
 });
 
+// mostrar/ocultar precio de compra, categoria, stock minimo y vencimiento
+function toggleDetallesAvanzados(forzarAbierto) {
+    const panel = document.getElementById('detalles-avanzados');
+    const boton = document.getElementById('btn-toggle-avanzado');
+    const abrir = forzarAbierto !== undefined ? forzarAbierto : !panel.classList.contains('abierto');
+
+    panel.classList.toggle('abierto', abrir);
+    boton.classList.toggle('abierto', abrir);
+}
+
 // cambiar entre modo código y modo peso
 function seleccionarTipo(tipo) {
     document.getElementById('tipo_registro_actual').value = tipo;
@@ -147,13 +157,14 @@ function resetearTodo() {
     if(form) form.reset();
     document.getElementById('form_vencimiento').value = ''; // ← limpiar fecha
     seleccionarTipo('codigo');
+    toggleDetallesAvanzados(false);
 }
 
 // buscar datos del producto por código
 async function buscarDatosProducto() {
     const codigoInput = document.getElementById('codigo_search');
     const codigo = codigoInput.value.trim();
-    
+
     if (!codigo || codigo === "AUTO-GENERADO") return;
 
     try {
@@ -164,9 +175,16 @@ async function buscarDatosProducto() {
             const data = productos[0];
             document.getElementById('form_nombre').value = data.nombre;
             document.getElementById('form_pcompra').value = data.costo || "";
-            document.getElementById('form_pventa').value = data.precio_venta || "";
-            
+            document.getElementById('form_pventa').value = data.precio || "";
+            document.getElementById('form_categoria').value = data.categoria || "General";
+
             if(data.unidad) document.getElementById('form_unidad').value = data.unidad;
+
+            // el producto ya tiene precio de compra o categoria propia: mostramos el panel
+            // para que se vea lo que se va a guardar, en vez de dejarlo escondido
+            if (data.costo || (data.categoria && data.categoria !== 'General')) {
+                toggleDetallesAvanzados(true);
+            }
 
             mostrarAlerta("📦 Producto encontrado", "success");
             document.getElementById('form_stock').focus();

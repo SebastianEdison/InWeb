@@ -101,6 +101,7 @@ def buscar_producto():
             "id": p['id'],
             "nombre": p['nombre'],
             "precio": p['precio_venta'],
+            "costo": p['costo'] if p['costo'] else 0,
             "unidad": p['unidad'],
             "codigo_barra": p['codigo_barra'],
             "stock": p['stock'],

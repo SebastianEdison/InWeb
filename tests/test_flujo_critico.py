@@ -400,3 +400,12 @@ def test_buscar_producto_incluye_estado_de_favorito(client):
     client.post('/api/toggle_favorito', json={'producto_id': id_producto, 'favorito': True})
     productos = client.get('/buscar_producto?busqueda=ProductoConFavorito').get_json()
     assert productos[0]['favorito'] is True
+
+def test_buscar_producto_incluye_el_costo(client):
+    login(client)
+    client.post('/agregar', json={
+        'codigo': '907', 'nombre': 'ProductoConCosto', 'precio_venta': 1000,
+        'precio_compra': 650, 'stock': 5,
+    })
+    productos = client.get('/buscar_producto?busqueda=ProductoConCosto').get_json()
+    assert productos[0]['costo'] == 650

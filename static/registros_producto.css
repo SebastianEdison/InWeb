@@ -309,6 +309,35 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
+/* --- BOTON "MAS DETALLES" (desplegable) --- */
+.btn-toggle-avanzado {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 2px dashed #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin-top: 30px;
+    cursor: pointer;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+.btn-toggle-avanzado:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.btn-toggle-avanzado i.fa-sliders-h { color: #3b82f6; margin-right: 8px; }
+
+.icono-chevron { transition: transform 0.25s ease; }
+.btn-toggle-avanzado.abierto .icono-chevron { transform: rotate(180deg); }
+
+.detalles-avanzados {
+    display: none;
+    padding-top: 28px;
+}
+.detalles-avanzados.abierto { display: block; }
+
 /* --- CAMPO FECHA DE VENCIMIENTO --- */
 #form_vencimiento {
     width: 100%;

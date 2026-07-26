@@ -63,15 +63,9 @@
                 <input type="text" id="form_nombre" required placeholder="Ej: Kuchen de Manzana">
             </div>
 
-            <div class="form-grid-precios">
-                <div class="form-group">
-                    <label class="lbl-green"><i class="fas fa-arrow-down"></i> P. Compra</label>
-                    <input type="number" id="form_pcompra" step="any" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label class="lbl-orange"><i class="fas fa-arrow-up"></i> P. Venta</label>
-                    <input type="number" id="form_pventa" step="any" placeholder="0.00" required>
-                </div>
+            <div class="form-group-full">
+                <label class="lbl-orange"><i class="fas fa-arrow-up"></i> Precio de Venta</label>
+                <input type="number" id="form_pventa" step="any" placeholder="0.00" required>
             </div>
 
             <div class="stock-container-modern">
@@ -102,14 +96,26 @@
                 </div>
             </div>
 
-            <div class="form-grid-precios">
-                <div class="form-group">
-                    <label class="lbl-orange"><i class="fas fa-exclamation-triangle"></i> Stock Mínimo
-                        <span class="lbl-opcional">(alerta)</span>
-                    </label>
-                    <input type="number" id="form_stock_minimo" placeholder="0" min="0" value="0">
+            <button type="button" class="btn-toggle-avanzado" id="btn-toggle-avanzado" onclick="toggleDetallesAvanzados()">
+                <span><i class="fas fa-sliders-h"></i> Más detalles <span class="lbl-opcional">(precio de compra, categoría, stock mínimo, vencimiento)</span></span>
+                <i class="fas fa-chevron-down icono-chevron" id="icono-chevron-avanzado"></i>
+            </button>
+
+            <div id="detalles-avanzados" class="detalles-avanzados">
+                <div class="form-grid-precios">
+                    <div class="form-group">
+                        <label class="lbl-green"><i class="fas fa-arrow-down"></i> P. Compra</label>
+                        <input type="number" id="form_pcompra" step="any" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="lbl-orange"><i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                            <span class="lbl-opcional">(alerta)</span>
+                        </label>
+                        <input type="number" id="form_stock_minimo" placeholder="0" min="0" value="0">
+                    </div>
                 </div>
-                <div class="form-group">
+
+                <div class="form-group-full">
                     <label class="lbl-blue"><i class="fas fa-tag"></i> Categoría</label>
                     <select id="form_categoria" class="select-moderno">
                         <option value="General">General</option>
@@ -123,15 +129,15 @@
                         <option value="Otro">Otro</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="form-group-full" id="contenedor-vencimiento">
-                <label class="lbl-blue">
-                    <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
-                    <span class="lbl-opcional">(opcional)</span>
-                </label>
-                <input type="date" id="form_vencimiento">
-                <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
+                <div class="form-group-full" id="contenedor-vencimiento">
+                    <label class="lbl-blue">
+                        <i class="fas fa-calendar-times"></i> Fecha de Vencimiento
+                        <span class="lbl-opcional">(opcional)</span>
+                    </label>
+                    <input type="date" id="form_vencimiento">
+                    <small>Déjalo vacío si el producto no tiene fecha de vencimiento</small>
+                </div>
             </div>
 
             <div class="form-acciones">
