@@ -44,7 +44,7 @@ body {
     display: grid;
     grid-template-columns: 380px 1fr;
     gap: 0;
-    max-width: 1240px;
+    max-width: 1500px;
     margin: 10px auto 40px auto;
     background: white;
     border-radius: 24px;
@@ -166,7 +166,7 @@ body {
     width: 100%;
     padding: 18px 22px;
     border-radius: 14px;
-    border: 2px solid #cbd5e1;
+    border: 2px solid #94a3b8;
     background-color: #f8fafc;
     font-size: 1.15rem; /* Lectura clara */
     color: #334155;
@@ -375,7 +375,7 @@ input:checked + .slider:before {
     width: 100%;
     padding: 17px 20px;
     border-radius: 14px;
-    border: 2px solid #cbd5e1;
+    border: 2px solid #94a3b8;
     background-color: #f8fafc;
     color: #334155;
     font-size: 1.05rem;
