@@ -14,10 +14,14 @@ function seleccionarTipo(tipo) {
     const contenedorMedida = document.getElementById('contenedor-medida');
     const columnaCantidad = document.getElementById('columna-cantidad');
     const selectUnidad = document.getElementById('form_unidad');
-    
+    const contenedorVencimiento = document.getElementById('contenedor-vencimiento');
+    const opcionSinStock = document.getElementById('opcion-sin-stock');
+    const chkVentaLibre = document.getElementById('chk_venta_libre');
+    const inputStock = document.getElementById('form_stock');
+
     btnCodigo.classList.remove('active');
     btnPeso.classList.remove('active');
-    
+
     if (tipo === 'codigo') {
         btnCodigo.classList.add('active');
         searchInput.placeholder = "Escanea el código de barras...";
@@ -31,6 +35,8 @@ function seleccionarTipo(tipo) {
         if(contenedorMedida) contenedorMedida.style.display = 'none';
         if(columnaCantidad) columnaCantidad.style.flex = "1";
         if(selectUnidad) selectUnidad.value = "Unidad";
+        if(contenedorVencimiento) contenedorVencimiento.style.display = '';
+        if(opcionSinStock) opcionSinStock.style.display = '';
 
     }  else {
         btnPeso.classList.add('active');
@@ -44,6 +50,18 @@ function seleccionarTipo(tipo) {
         if(contenedorMedida) contenedorMedida.style.display = 'block';
         if(columnaCantidad) columnaCantidad.style.flex = "2";
         if(selectUnidad) selectUnidad.value = "Kg";
+
+        // vencimiento y venta libre no aplican a productos por peso/granel
+        if(contenedorVencimiento) {
+            contenedorVencimiento.style.display = 'none';
+            document.getElementById('form_vencimiento').value = '';
+        }
+        if(opcionSinStock) opcionSinStock.style.display = 'none';
+        if(chkVentaLibre && chkVentaLibre.checked) {
+            chkVentaLibre.checked = false;
+            inputStock.disabled = false;
+            inputStock.style.opacity = "1";
+        }
 
         // Foco al nombre, no al input bloqueado
         document.getElementById('form_nombre').focus();
