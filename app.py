@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, url_for
 import os, sys, shutil, threading, webbrowser, time, secrets, logging
 from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
@@ -51,6 +51,18 @@ def create_app():
     app.register_blueprint(proveedores_bp)
     app.register_blueprint(reportes_bp)
     app.register_blueprint(configuracion_bp)
+
+    @app.template_global()
+    def static_v(filename):
+        """url_for('static', ...) con la fecha de modificacion del archivo como query string,
+        para que el navegador baje la version nueva de un CSS/JS apenas cambia en vez de
+        quedarse con una copia vieja en cache indefinidamente."""
+        ruta = os.path.join(app.static_folder, filename)
+        try:
+            version = int(os.path.getmtime(ruta))
+        except OSError:
+            version = 0
+        return url_for('static', filename=filename) + f'?v={version}'
 
     return app
 

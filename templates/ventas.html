@@ -358,5 +358,5 @@
 
 {% block scripts %}
     <script>window.APLICA_IVA = {{ 'true' if aplica_iva else 'false' }};</script>
-    <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+    <script src="{{ static_v('js/ventas.js') }}"></script>
 {% endblock %}

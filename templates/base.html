@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EL HISTORICO{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    <link rel="stylesheet" href="{{ static_v('style.css') }}">
+    <link rel="stylesheet" href="{{ static_v('registros_producto.css') }}">
+    <link rel="stylesheet" href="{{ static_v('reportes.css') }}">
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -65,7 +65,7 @@
 
     {% block scripts %}{% endblock %}
 
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script src="{{ static_v('js/base.js') }}"></script>
 
     <!-- modal cambiar contraseña -->
     <div id="modal-password" class="modal-gen">

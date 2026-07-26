@@ -131,7 +131,7 @@ body {
 
 /* --- PANEL DERECHO: FORMULARIO Y INPUTS PRO --- */
 .panel-formulario {
-    padding: 45px 55px;
+    padding: 36px 48px;
     background: white;
 }
 
@@ -191,13 +191,19 @@ body {
 .form-grid-producto {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 25px;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 /* --- SECCIONES TEMATICAS DEL FORMULARIO --- */
 .grupo-campos {
-    margin-bottom: 32px;
-    padding-bottom: 28px;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
     border-bottom: 1px solid #f1f5f9;
 }
 .grupo-campos:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -211,7 +217,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 1.2px;
     color: #1e293b;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
 
 .grupo-titulo i {
@@ -234,7 +240,7 @@ body {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 18px;
-    padding: 24px;
+    padding: 20px;
 }
 
 .switch-texto strong {
@@ -253,8 +259,8 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top: 1px solid #e2e8f0;
 }
 

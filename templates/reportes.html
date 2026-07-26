@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='reportes.css') }}">
+    <link rel="stylesheet" href="{{ static_v('reportes.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
@@ -508,5 +508,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/reportes.js') }}"></script>
+    <script src="{{ static_v('js/reportes.js') }}"></script>
 {% endblock %}

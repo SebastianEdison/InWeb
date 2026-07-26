@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='registros_producto.css') }}">
+    <link rel="stylesheet" href="{{ static_v('registros_producto.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -157,5 +157,5 @@
 
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+    <script src="{{ static_v('js/registro.js') }}"></script>
 {% endblock %}
