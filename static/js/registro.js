@@ -60,6 +60,7 @@ function seleccionarTipo(tipo) {
         }
         if(ayudaVencimiento) ayudaVencimiento.style.display = 'none';
         if(opcionSinStock) opcionSinStock.style.display = 'none';
+        document.getElementById('stock-actual-box').style.display = 'none';
         if(chkVentaLibre && chkVentaLibre.checked) {
             chkVentaLibre.checked = false;
             inputStock.disabled = false;
@@ -167,6 +168,7 @@ function resetearTodo() {
     const form = document.getElementById('form-ingreso-completo');
     if(form) form.reset();
     document.getElementById('form_vencimiento').value = ''; // ← limpiar fecha
+    document.getElementById('stock-actual-box').style.display = 'none';
     seleccionarTipo('codigo');
 }
 
@@ -190,12 +192,18 @@ async function buscarDatosProducto() {
 
             if(data.unidad) document.getElementById('form_unidad').value = data.unidad;
 
-            mostrarAlerta("📦 Producto encontrado", "success");
+            // muestra cuanto stock tiene ya, para que quede claro que "Cantidad a Agregar"
+            // se suma a esto y no lo reemplaza
+            document.getElementById('stock-actual-valor').textContent = data.stock ?? 0;
+            document.getElementById('stock-actual-box').style.display = '';
+
+            mostrarAlerta("📦 Producto encontrado. Tiene " + (data.stock ?? 0) + " en stock", "success");
             document.getElementById('form_stock').focus();
         } else {
             document.getElementById('form_nombre').value = "";
             document.getElementById('form_pcompra').value = "";
             document.getElementById('form_pventa').value = "";
+            document.getElementById('stock-actual-box').style.display = 'none';
             document.getElementById('form_nombre').focus();
         }
     } catch (error) {

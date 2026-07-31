@@ -103,8 +103,13 @@
                 <div class="grupo-titulo"><i class="fas fa-boxes"></i> Inventario</div>
                 <div class="caja-inventario">
                     <div class="input-grupal-stock">
+                        <div class="form-group" id="stock-actual-box" style="display:none;">
+                            <label class="lbl-blue">Stock Actual</label>
+                            <div class="stock-actual-display" id="stock-actual-valor">0</div>
+                        </div>
+
                         <div class="form-group" id="columna-cantidad">
-                            <label class="lbl-purple" id="label-stock-text">Cantidad Actual</label>
+                            <label class="lbl-purple" id="label-stock-text">Cantidad a Agregar <span class="lbl-opcional">(opcional)</span></label>
                             <input type="number" id="form_stock" class="input-pro" placeholder="0">
                         </div>
 

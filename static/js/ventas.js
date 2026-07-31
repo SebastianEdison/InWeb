@@ -9,6 +9,58 @@ function netoDeTotal(total) {
     return _ivaActivo ? Math.round(total / 1.19) : total;
 }
 
+// busca un producto por su codigo de barra exacto y lo agrega al carrito si existe
+async function buscarYAgregarPorCodigo(codigo) {
+    try {
+        const response = await fetch(`/buscar_producto?busqueda=${encodeURIComponent(codigo)}`);
+        const productos = await response.json();
+        const productoExacto = productos.find(p => p.codigo_barra === codigo);
+        if (productoExacto) {
+            agregarAlCarrito(productoExacto);
+            return true;
+        }
+        mostrarAlertaVenta('❌ Producto no existe', 'error');
+        return false;
+    } catch (error) {
+        console.error('Error al buscar por código:', error);
+        mostrarAlertaVenta('❌ Error de conexión', 'error');
+        return false;
+    }
+}
+
+// Permite escanear un codigo de barras sin importar donde este el cursor (mientras no se este
+// escribiendo a mano en el buscador, que ya tiene su propia logica). Un lector de codigos tipea
+// muchisimo mas rapido que una persona y termina con Enter: eso es lo que se detecta aca.
+let _bufferEscaneoGlobal = '';
+let _ultimaTeclaEscaneoGlobal = 0;
+const UMBRAL_ESCANEO_MS = 60;
+
+document.addEventListener('keydown', (e) => {
+    const buscadorVentas = document.getElementById('buscador-ventas');
+    if (!buscadorVentas || document.activeElement === buscadorVentas) return;
+
+    const ahora = Date.now();
+    if (ahora - _ultimaTeclaEscaneoGlobal > UMBRAL_ESCANEO_MS) {
+        _bufferEscaneoGlobal = '';
+    }
+    _ultimaTeclaEscaneoGlobal = ahora;
+
+    if (e.key === 'Enter') {
+        if (_bufferEscaneoGlobal.length >= 4) {
+            e.preventDefault();
+            buscarYAgregarPorCodigo(_bufferEscaneoGlobal);
+        }
+        _bufferEscaneoGlobal = '';
+        return;
+    }
+
+    if (e.key.length === 1) {
+        _bufferEscaneoGlobal += e.key;
+    } else {
+        _bufferEscaneoGlobal = '';
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-ventas');
     const listaSugerencias = document.getElementById('lista-sugerencias');

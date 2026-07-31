@@ -182,6 +182,20 @@ body {
     transform: translateY(-1px);
 }
 
+/* Muestra el stock que ya tiene el producto encontrado (solo lectura): la
+   "Cantidad a Agregar" de al lado se suma a esto, no lo reemplaza. */
+.stock-actual-display {
+    width: 100%;
+    padding: 18px 22px;
+    border-radius: 14px;
+    border: 3px solid #cbd5e1;
+    background-color: #f1f5f9;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+}
+
 .form-grid-precios {
     display: grid;
     grid-template-columns: 1fr 1fr;
