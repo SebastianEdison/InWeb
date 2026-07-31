@@ -59,11 +59,13 @@ h1, h2, h3 {
 /* =========================================
    2. LAYOUT PRINCIPAL
    ========================================= */
+/* Mismo padding horizontal que la topbar (36px) para que el contenido quede
+   alineado con ella en vez de centrado con un margen propio más angosto
+   que deja una franja en blanco a los costados en pantallas anchas. */
 .container-fluid-custom {
     width: 100%;
-    max-width: 1800px;
     margin: 0 auto;
-    padding: 0 15px;
+    padding: 0 36px;
 }
 
 .container {
