@@ -512,6 +512,15 @@ h1, h2, h3 {
     margin-top: 15px;
 }
 
+/* Columnas fijas por posición: cuando no hay favoritos, el aside se oculta
+   con display:none y el grid lo saca por completo del auto-placement, lo
+   que corría a .ventas-main y .ventas-sidebar una columna hacia la
+   izquierda (la tabla terminaba apretada en la columna de 220px). Pinear
+   la columna de cada uno evita que eso pase. */
+.ventas-favoritos-sidebar { grid-column: 1; }
+.ventas-main             { grid-column: 2; }
+.ventas-sidebar          { grid-column: 3; }
+
 /* Columna de Accesos Rápidos: estira a la altura completa del contenido
    (misma altura que el buscador+tabla y el resumen), con scroll interno
    propio para no empujar nada si hay muchos favoritos. */
@@ -1221,6 +1230,7 @@ h1, h2, h3 {
         grid-template-columns: 1fr;
     }
 
+    .ventas-favoritos-sidebar, .ventas-main, .ventas-sidebar { grid-column: 1; }
     .ventas-favoritos-sidebar { order: -1; }
     .accesos-rapidos-container { height: auto; }
     .accesos-rapidos-grid {
