@@ -3,48 +3,58 @@
 {% block title %}Ventas - Mi Negocio{% endblock %}
 
 {% block topbar_stats %}
-    <div class="caja-diaria-group">
-            <div class="indicator-card total-dia">
-                <i class="fas fa-chart-line"></i>
-                <div class="info">
-                    <span>Venta Total</span>
-                    <strong id="total-dia-acumulado">$0</strong>
+    <div class="topbar-stats-row">
+        <div class="caja-diaria-group">
+                <div class="indicator-card total-dia">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="info">
+                        <span>Venta Total</span>
+                        <strong id="total-dia-acumulado">$0</strong>
+                    </div>
                 </div>
-            </div>
-            <div class="indicator-card efectivo">
-                <i class="fas fa-money-bill-wave"></i>
-                <div class="info">
-                    <span>Efectivo</span>
-                    <strong id="total-efectivo">$0</strong>
+                <div class="indicator-card efectivo">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <div class="info">
+                        <span>Efectivo</span>
+                        <strong id="total-efectivo">$0</strong>
+                    </div>
                 </div>
-            </div>
-            <div class="indicator-card tarjeta">
-                <i class="fas fa-credit-card"></i>
-                <div class="info">
-                    <span>Tarjeta</span>
-                    <strong id="total-tarjeta">$0</strong>
+                <div class="indicator-card tarjeta">
+                    <i class="fas fa-credit-card"></i>
+                    <div class="info">
+                        <span>Tarjeta</span>
+                        <strong id="total-tarjeta">$0</strong>
+                    </div>
                 </div>
-            </div>
-            <div class="indicator-card otros">
-                <i class="fas fa-wallet"></i>
-                <div class="info">
-                    <span>Otros</span>
-                    <strong id="total-otros">$0</strong>
+                <div class="indicator-card otros">
+                    <i class="fas fa-wallet"></i>
+                    <div class="info">
+                        <span>Otros</span>
+                        <strong id="total-otros">$0</strong>
+                    </div>
                 </div>
-            </div>
 
-            <div class="sep-vertical"></div>
-            <button type="button"
-                    onclick="solicitarCierreTurno()"
-                    class="btn-mini-cierre">
-                <i class="fas fa-power-off"></i> Cerrar Caja
-            </button>
+                <div class="sep-vertical"></div>
+                <button type="button"
+                        onclick="solicitarCierreTurno()"
+                        class="btn-mini-cierre">
+                    <i class="fas fa-power-off"></i> Cerrar Caja
+                </button>
+        </div>
+
+        <div id="alertas-ventas" class="alertas-ventas-topbar" style="display:none;"></div>
     </div>
-
 {% endblock %}
 
 {% block content %}
     <div class="ventas-layout {{ '' if aplica_iva else 'sin-iva' }}">
+        <aside class="ventas-favoritos-sidebar" id="ventas-favoritos-sidebar" style="display:none;">
+            <section class="accesos-rapidos-container" id="accesos-rapidos-container">
+                <h4 class="accesos-rapidos-titulo"><i class="fas fa-bolt"></i> Accesos Rápidos</h4>
+                <div class="accesos-rapidos-grid" id="accesos-rapidos-grid"></div>
+            </section>
+        </aside>
+
         <div class="ventas-main">
             <section class="search-box-container">
                 <div class="input-with-icon">
@@ -54,13 +64,6 @@
                            autocomplete="off" autofocus>
                     <ul id="lista-sugerencias" class="sugerencias-busqueda"></ul>
                 </div>
-            </section>
-
-            <div id="alertas-ventas" class="alertas-ventas-banner" style="display:none;"></div>
-
-            <section class="accesos-rapidos-container" id="accesos-rapidos-container" style="display:none;">
-                <h4 class="accesos-rapidos-titulo"><i class="fas fa-bolt"></i> Accesos Rápidos</h4>
-                <div class="accesos-rapidos-grid" id="accesos-rapidos-grid"></div>
             </section>
 
             <div class="tabla-container card-shadow">

@@ -44,6 +44,7 @@ function seleccionarTipo(tipo) {
         btnPeso.classList.add('active');
         searchInput.value = "Se generará automáticamente";
         searchInput.readOnly = true;
+        ocultarSugerenciasAgregar();
         searchInput.style.background = "#f1f5f9";
         searchInput.style.color = "#94a3b8";
         searchInput.style.cursor = "not-allowed";
@@ -169,10 +170,39 @@ function resetearTodo() {
     if(form) form.reset();
     document.getElementById('form_vencimiento').value = ''; // ← limpiar fecha
     document.getElementById('stock-actual-box').style.display = 'none';
+    ocultarSugerenciasAgregar();
     seleccionarTipo('codigo');
 }
 
-// buscar datos del producto por código
+// carga en el formulario los datos de un producto ya existente (llamado tanto
+// al encontrar coincidencia exacta como al elegir una sugerencia de la lista)
+function cargarProductoEncontrado(data) {
+    document.getElementById('form_nombre').value = data.nombre;
+    document.getElementById('form_pcompra').value = data.costo || "";
+    document.getElementById('form_pventa').value = data.precio || "";
+    document.getElementById('form_categoria').value = data.categoria || "General";
+
+    if (data.unidad) document.getElementById('form_unidad').value = data.unidad;
+
+    // muestra cuanto stock tiene ya, para que quede claro que "Cantidad a Agregar"
+    // se suma a esto y no lo reemplaza
+    document.getElementById('stock-actual-valor').textContent = data.stock ?? 0;
+    document.getElementById('stock-actual-box').style.display = '';
+}
+
+function limpiarCamposProducto() {
+    document.getElementById('form_nombre').value = "";
+    document.getElementById('form_pcompra').value = "";
+    document.getElementById('form_pventa').value = "";
+    document.getElementById('stock-actual-box').style.display = 'none';
+}
+
+function ocultarSugerenciasAgregar() {
+    const lista = document.getElementById('lista-sugerencias-agregar');
+    if (lista) { lista.style.display = 'none'; lista.innerHTML = ''; }
+}
+
+// buscar datos del producto por código (coincidencia exacta, usado al presionar Enter)
 async function buscarDatosProducto() {
     const codigoInput = document.getElementById('codigo_search');
     const codigo = codigoInput.value.trim();
@@ -180,43 +210,102 @@ async function buscarDatosProducto() {
     if (!codigo || codigo === "AUTO-GENERADO") return;
 
     try {
-        const response = await fetch(`/buscar_producto?busqueda=${codigo}`);
+        const response = await fetch(`/buscar_producto?busqueda=${encodeURIComponent(codigo)}`);
         const productos = await response.json();
+        const exacto = productos.find(p => p.codigo_barra === codigo) || productos[0];
 
-        if (productos && productos.length > 0) {
-            const data = productos[0];
-            document.getElementById('form_nombre').value = data.nombre;
-            document.getElementById('form_pcompra').value = data.costo || "";
-            document.getElementById('form_pventa').value = data.precio || "";
-            document.getElementById('form_categoria').value = data.categoria || "General";
-
-            if(data.unidad) document.getElementById('form_unidad').value = data.unidad;
-
-            // muestra cuanto stock tiene ya, para que quede claro que "Cantidad a Agregar"
-            // se suma a esto y no lo reemplaza
-            document.getElementById('stock-actual-valor').textContent = data.stock ?? 0;
-            document.getElementById('stock-actual-box').style.display = '';
-
-            mostrarAlerta("📦 Producto encontrado. Tiene " + (data.stock ?? 0) + " en stock", "success");
+        if (exacto) {
+            cargarProductoEncontrado(exacto);
+            mostrarAlerta("📦 Producto encontrado. Tiene " + (exacto.stock ?? 0) + " en stock", "success");
             document.getElementById('form_stock').focus();
         } else {
-            document.getElementById('form_nombre').value = "";
-            document.getElementById('form_pcompra').value = "";
-            document.getElementById('form_pventa').value = "";
-            document.getElementById('stock-actual-box').style.display = 'none';
+            limpiarCamposProducto();
+            mostrarAlerta("⚠️ Producto no existe. Completa los datos para registrarlo como nuevo", "error");
             document.getElementById('form_nombre').focus();
         }
     } catch (error) {
         console.error("Error al buscar:", error);
+    } finally {
+        ocultarSugerenciasAgregar();
     }
 }
 
-// enter en el scanner dispara búsqueda
+// búsqueda en vivo mientras se escribe o escanea: muestra productos que ya existen
+// para que solo haga falta sumar stock nuevo, o avisa si el código no existe
+let _timeoutBusquedaAgregar;
+document.getElementById('codigo_search').addEventListener('input', () => {
+    const tipo = document.getElementById('tipo_registro_actual').value;
+    if (tipo !== 'codigo') return;
+
+    const codigoInput = document.getElementById('codigo_search');
+    const codigo = codigoInput.value.trim();
+    const lista = document.getElementById('lista-sugerencias-agregar');
+
+    clearTimeout(_timeoutBusquedaAgregar);
+
+    if (!codigo || codigo === "AUTO-GENERADO") {
+        ocultarSugerenciasAgregar();
+        return;
+    }
+
+    _timeoutBusquedaAgregar = setTimeout(async () => {
+        try {
+            const response = await fetch(`/buscar_producto?busqueda=${encodeURIComponent(codigo)}`);
+            const productos = await response.json();
+            const exacto = productos.find(p => p.codigo_barra === codigo);
+
+            // coincidencia exacta de código de barra: carga automáticamente, sin
+            // necesidad de que el usuario elija nada de la lista
+            if (exacto) {
+                cargarProductoEncontrado(exacto);
+                ocultarSugerenciasAgregar();
+                return;
+            }
+
+            lista.innerHTML = '';
+            if (productos.length > 0) {
+                productos.forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="nombre-sugerencia">${p.nombre}</span>
+                        <span class="precio-sugerencia">$${p.precio.toLocaleString('es-CL')}${p.unidad === 'Kg' ? '/kg' : ''}</span>
+                    `;
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        codigoInput.value = p.codigo_barra || '';
+                        cargarProductoEncontrado(p);
+                        ocultarSugerenciasAgregar();
+                        document.getElementById('form_stock').focus();
+                    });
+                    lista.appendChild(li);
+                });
+                lista.style.display = 'block';
+            } else {
+                limpiarCamposProducto();
+                const li = document.createElement('li');
+                li.className = 'sugerencia-sin-resultados';
+                li.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span>Producto no existe, se registrará como nuevo</span>`;
+                lista.appendChild(li);
+                lista.style.display = 'block';
+            }
+        } catch (error) {
+            console.error("Error en búsqueda en vivo:", error);
+        }
+    }, 250);
+});
+
+// enter en el scanner dispara búsqueda inmediata (con alerta si no existe)
 document.getElementById('codigo_search').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
+        clearTimeout(_timeoutBusquedaAgregar);
         buscarDatosProducto();
     }
+});
+
+// ocultar sugerencias al perder el foco (con delay para permitir el click)
+document.getElementById('codigo_search').addEventListener('blur', () => {
+    setTimeout(ocultarSugerenciasAgregar, 200);
 });
 
 // mantener foco en el scanner al hacer clic fuera del formulario

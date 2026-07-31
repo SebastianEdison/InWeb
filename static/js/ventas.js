@@ -793,7 +793,7 @@ async function cargarAlertasVentas() {
             html += `<a href="/?bajo_stock=1" class="alerta-chip critica"><i class="fas fa-box-open"></i> ${data.stock_bajo} producto${data.stock_bajo !== 1 ? 's' : ''} con stock bajo</a>`;
         }
         if (data.por_vencer > 0) {
-            html += `<a href="/reportes" class="alerta-chip"><i class="fas fa-hourglass-half"></i> ${data.por_vencer} producto${data.por_vencer !== 1 ? 's' : ''} por vencer pronto</a>`;
+            html += `<a href="/reportes?seccion=vencer" class="alerta-chip"><i class="fas fa-hourglass-half"></i> ${data.por_vencer} producto${data.por_vencer !== 1 ? 's' : ''} por vencer pronto</a>`;
         }
         banner.innerHTML = html;
         banner.style.display = html ? 'flex' : 'none';
@@ -802,11 +802,11 @@ async function cargarAlertasVentas() {
     }
 }
 
-// grilla de accesos rapidos (favoritos + mas vendidos)
+// columna de accesos rapidos (favoritos + mas vendidos), a la izquierda de la tabla
 async function cargarAccesosRapidos() {
-    const container = document.getElementById('accesos-rapidos-container');
+    const sidebar = document.getElementById('ventas-favoritos-sidebar');
     const grid = document.getElementById('accesos-rapidos-grid');
-    if (!container || !grid) return;
+    if (!sidebar || !grid) return;
 
     try {
         const resp = await fetch('/api/accesos_rapidos');
@@ -814,7 +814,7 @@ async function cargarAccesosRapidos() {
         grid.innerHTML = '';
 
         if (!productos.length) {
-            container.style.display = 'none';
+            sidebar.style.display = 'none';
             return;
         }
 
@@ -831,7 +831,7 @@ async function cargarAccesosRapidos() {
             grid.appendChild(tile);
         });
 
-        container.style.display = 'block';
+        sidebar.style.display = 'flex';
     } catch (e) {
         console.error('Error al cargar accesos rapidos', e);
     }

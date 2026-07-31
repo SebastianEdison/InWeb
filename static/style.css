@@ -456,12 +456,13 @@ h1, h2, h3 {
    6. BUSCADOR DE CÓDIGO (Agregar productos)
    ========================================= */
 .search-box-modern {
+    position: relative;
     display: flex;
     align-items: center;
     background: var(--bg-light);
     border: 2px solid #cbd5e1;
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.3s ease;
 }
 
@@ -504,11 +505,21 @@ h1, h2, h3 {
    ========================================= */
 .ventas-layout {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 220px 1fr 340px;
     gap: 20px;
     width: 100%;
     align-items: start;
     margin-top: 15px;
+}
+
+/* Columna de Accesos Rápidos: estira a la altura completa del contenido
+   (misma altura que el buscador+tabla y el resumen), con scroll interno
+   propio para no empujar nada si hay muchos favoritos. */
+.ventas-favoritos-sidebar {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* =========================================
@@ -774,11 +785,23 @@ h1, h2, h3 {
 /* =========================================
    10b. VENTAS - ALERTAS, ACCESOS RAPIDOS, VENTAS DEL DIA
    ========================================= */
-.alertas-ventas-banner {
+
+/* Alertas (stock bajo / por vencer): viven en la franja superior, junto a
+   los indicadores de caja, cerca del nombre de usuario — no dentro del
+   contenido, para que no compitan con el buscador ni la tabla. */
+.topbar-stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.alertas-ventas-topbar {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 10px;
-    margin-bottom: 15px;
 }
 
 .alerta-chip {
@@ -788,31 +811,33 @@ h1, h2, h3 {
     background: #fffbeb;
     border: 1px solid #fde68a;
     color: #92400e;
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 10px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
+    white-space: nowrap;
     transition: background 0.2s;
 }
 .alerta-chip:hover { background: #fef3c7; }
 .alerta-chip.critica { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .alerta-chip.critica:hover { background: #fee2e2; }
 
-/* Franja de ancho completo, siempre arriba de la tabla. Los accesos rapidos
-   van en una sola fila horizontal con scroll (no en una grilla que envuelve
-   a filas nuevas), asi la altura nunca crece por mas favoritos que se
-   agreguen y la tabla de abajo nunca se corre de lugar. */
 .ventas-layout { position: relative; }
 
+/* Accesos rápidos: columna vertical a la izquierda, con su propio scroll
+   interno para no crecer ni empujar el buscador/tabla, sin importar
+   cuántos favoritos haya. */
 .accesos-rapidos-container {
     width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     background: var(--white);
     border-radius: 15px;
     box-shadow: var(--shadow);
-    padding: 14px 18px;
-    margin-bottom: 20px;
+    padding: 14px 14px;
 }
 
 .accesos-rapidos-titulo {
@@ -829,14 +854,18 @@ h1, h2, h3 {
 
 .accesos-rapidos-grid {
     display: flex;
+    flex-direction: column;
     flex-wrap: nowrap;
     gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 6px; /* deja lugar para la barra de scroll sin que tape las tarjetas */
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px; /* deja lugar para la barra de scroll sin que tape las tarjetas */
 }
 
 .acceso-rapido-tile {
-    flex: 0 0 110px;
+    flex: 0 0 auto;
+    width: 100%;
     background: #f8fafc;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -1166,7 +1195,7 @@ h1, h2, h3 {
    ========================================= */
 @media (max-width: 1024px) {
     .ventas-layout {
-        grid-template-columns: 1fr 300px;
+        grid-template-columns: 180px 1fr 300px;
         gap: 15px;
     }
 
@@ -1186,10 +1215,20 @@ h1, h2, h3 {
     .caja-diaria-group { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
     .indicator-card    { min-width: 90px; flex-shrink: 0; }
 
-    /* Ventas: columna única */
+    /* Ventas: columna única. Los accesos rápidos vuelven a ser una fila
+       horizontal con scroll (una columna angosta no tiene sentido en móvil) */
     .ventas-layout {
         grid-template-columns: 1fr;
     }
+
+    .ventas-favoritos-sidebar { order: -1; }
+    .accesos-rapidos-container { height: auto; }
+    .accesos-rapidos-grid {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+    .acceso-rapido-tile { flex: 0 0 110px; width: auto; }
 
     .resumen-card {
         position: static;

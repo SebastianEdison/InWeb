@@ -5,6 +5,12 @@ let _cacheFacturas = [];
 document.addEventListener('DOMContentLoaded', () => {
     cargarDatosTarjetas();
 
+    // permite llegar directo a una pestaña (ej. desde la alerta de "por vencer" en Ventas)
+    const seccionInicial = new URLSearchParams(window.location.search).get('seccion');
+    if (seccionInicial) {
+        mostrarSeccion(seccionInicial);
+    }
+
     const filtroFecha = document.getElementById('fecha-busqueda');
     if (filtroFecha) {
         filtroFecha.addEventListener('change', (e) => {
