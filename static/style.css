@@ -862,9 +862,9 @@ h1, h2, h3 {
 .accesos-rapidos-titulo i { color: #f59e0b; }
 
 .accesos-rapidos-grid {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-content: start;
     gap: 10px;
     flex: 1;
     min-height: 0;
@@ -1234,6 +1234,7 @@ h1, h2, h3 {
     .ventas-favoritos-sidebar { order: -1; }
     .accesos-rapidos-container { height: auto; }
     .accesos-rapidos-grid {
+        display: flex;
         flex-direction: row;
         overflow-x: auto;
         overflow-y: visible;
