@@ -622,6 +622,7 @@ h1, h2, h3 {
 
 .tabla-ventas {
     width: 100%;
+    min-width: 480px; /* si la columna de la tabla se achica de mas, que scrollee (.tabla-container) en vez de amontonar el texto de los encabezados */
     border-collapse: collapse;
     background: var(--white);
     border-radius: 10px;
@@ -865,7 +866,11 @@ h1, h2, h3 {
 
 .accesos-rapidos-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    /* minmax(0, 1fr) en vez de 1fr: sin el minimo en 0, una grilla no puede
+       achicar una columna mas alla del contenido que no puede partirse (ej.
+       "$1.200/kg" sin espacios), y eso la hacia desbordar con scroll propio
+       en vez de simplemente truncar el texto con "...". */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
     gap: 10px;
     flex: 1;
@@ -877,6 +882,7 @@ h1, h2, h3 {
 .acceso-rapido-tile {
     flex: 0 0 auto;
     width: 100%;
+    min-width: 0;
     background: #f8fafc;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -887,7 +893,7 @@ h1, h2, h3 {
 }
 .acceso-rapido-tile:hover { background: #eff6ff; border-color: #93c5fd; transform: translateY(-1px); }
 .acceso-rapido-tile .nombre { display: block; font-weight: 700; font-size: 0.85rem; color: #1e293b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acceso-rapido-tile .precio { display: block; font-size: 0.8rem; color: #3b82f6; font-weight: 600; }
+.acceso-rapido-tile .precio { display: block; font-size: 0.8rem; color: #3b82f6; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acceso-rapido-tile.sin-stock { opacity: 0.5; }
 
 .ventas-hoy-card { position: static; margin-top: 20px; max-height: 340px; display: flex; flex-direction: column; }
