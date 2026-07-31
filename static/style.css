@@ -800,17 +800,18 @@ h1, h2, h3 {
 .alerta-chip.critica { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .alerta-chip.critica:hover { background: #fee2e2; }
 
-/* Por defecto: tarjeta compacta arriba de la tabla, del ancho justo para su
-   contenido (no estira a lo ancho para no dejar espacio muerto). */
+/* Franja de ancho completo, siempre arriba de la tabla. Los accesos rapidos
+   van en una sola fila horizontal con scroll (no en una grilla que envuelve
+   a filas nuevas), asi la altura nunca crece por mas favoritos que se
+   agreguen y la tabla de abajo nunca se corre de lugar. */
 .ventas-layout { position: relative; }
 
 .accesos-rapidos-container {
-    width: fit-content;
-    max-width: 100%;
+    width: 100%;
     background: var(--white);
     border-radius: 15px;
     box-shadow: var(--shadow);
-    padding: 16px 18px;
+    padding: 14px 18px;
     margin-bottom: 20px;
 }
 
@@ -827,27 +828,15 @@ h1, h2, h3 {
 .accesos-rapidos-titulo i { color: #f59e0b; }
 
 .accesos-rapidos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 10px;
-}
-
-/* En pantallas muy anchas hay margen libre a los costados del contenido
-   (container-fluid-custom tiene max-width). Ahi los accesos rapidos flotan
-   en ese margen izquierdo en vez de compartir fila con la tabla, para que
-   esta ultima no pierda ni un pixel de ancho. */
-@media (min-width: 2100px) {
-    .accesos-rapidos-container {
-        position: absolute;
-        top: 0;
-        right: 100%;
-        margin-right: 20px;
-        width: 190px;
-    }
-    .accesos-rapidos-grid { grid-template-columns: 1fr; }
+    overflow-x: auto;
+    padding-bottom: 6px; /* deja lugar para la barra de scroll sin que tape las tarjetas */
 }
 
 .acceso-rapido-tile {
+    flex: 0 0 110px;
     background: #f8fafc;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -857,7 +846,7 @@ h1, h2, h3 {
     transition: all 0.15s ease;
 }
 .acceso-rapido-tile:hover { background: #eff6ff; border-color: #93c5fd; transform: translateY(-1px); }
-.acceso-rapido-tile .nombre { display: block; font-weight: 700; font-size: 0.85rem; color: #1e293b; margin-bottom: 4px; }
+.acceso-rapido-tile .nombre { display: block; font-weight: 700; font-size: 0.85rem; color: #1e293b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acceso-rapido-tile .precio { display: block; font-size: 0.8rem; color: #3b82f6; font-weight: 600; }
 .acceso-rapido-tile.sin-stock { opacity: 0.5; }
 
@@ -1201,8 +1190,6 @@ h1, h2, h3 {
     .ventas-layout {
         grid-template-columns: 1fr;
     }
-
-    .accesos-rapidos-container { width: 100%; }
 
     .resumen-card {
         position: static;
